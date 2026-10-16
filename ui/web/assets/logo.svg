@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <!-- Modern Geometric Monogram 'V' Brand Identity (Non-Emoji) -->
+  <defs>
+    <linearGradient id="vFacetLeft" x1="12" y1="12" x2="32" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#241E19" />
+      <stop offset="100%" stop-color="#181410" />
+    </linearGradient>
+    <linearGradient id="vFacetRight" x1="52" y1="12" x2="32" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8C6842" />
+      <stop offset="100%" stop-color="#6F5030" />
+    </linearGradient>
+    <linearGradient id="vFacetApex" x1="28" y1="36" x2="36" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#B89065" />
+      <stop offset="100%" stop-color="#8C6842" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Main Beam (Espresso) -->
+  <path d="M10 14H24L32 40L28 50L10 14Z" fill="url(#vFacetLeft)" />
+
+  <!-- Right Diagonal Beam (Warm Bronze) -->
+  <path d="M54 14H40L32 40L39 48L54 14Z" fill="url(#vFacetRight)" />
+
+  <!-- Central Interlocking Dynamic Prism Apex (Bronze Gold Accent) -->
+  <path d="M28 50L32 40L36 50L32 54L28 50Z" fill="url(#vFacetApex)" />
+</svg>

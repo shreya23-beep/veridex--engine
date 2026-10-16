@@ -1,0 +1,68 @@
+/* VeriDex AI Injected Floating Pill */
+#veridex-floating-badge {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 14px 6px 8px !important;
+  background-color: rgba(36, 30, 25, 0.92) !important;
+  color: #FAF8F5 !important;
+  border: 1px solid #8C6842 !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  user-select: none !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+#veridex-floating-badge:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+  background-color: rgba(36, 30, 25, 0.98) !important;
+}
+
+#veridex-floating-badge img.veridex-logo {
+  width: 22px !important;
+  height: 22px !important;
+  object-fit: contain !important;
+  display: block !important;
+  border-radius: 4px !important;
+}
+
+#veridex-floating-badge .veridex-dot {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  background-color: #22c55e !important;
+  display: inline-block !important;
+}
+
+#veridex-floating-badge .veridex-text {
+  color: #FAF8F5 !important;
+  letter-spacing: -0.01em !important;
+  white-space: nowrap !important;
+}
+
+/* Threat State */
+#veridex-floating-badge.threat {
+  background-color: rgba(197, 57, 41, 0.95) !important;
+  border-color: #F5C5BE !important;
+}
+
+#veridex-floating-badge.threat .veridex-dot {
+  background-color: #FFFFFF !important;
+  animation: veridexPulse 1s infinite alternate !important;
+}
+
+@keyframes veridexPulse {
+  from { opacity: 0.6; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1.2); }
+}

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>VeriDex AI — Autonomous On-Device Scam Protection</title>
+  
+  <!-- Direct Inline Crema Theme Guarantee (Bypasses Any Browser Cache) -->
+  <style>
+    :root {
+      --bg-crema: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --bg-card-subtle: #F6F3ED;
+      --border: #E8E2D8;
+      --border-focus: #8C6842;
+      --text-main: #241E19;
+      --text-muted: #756A63;
+      --brand: #8C6842;
+      --brand-light: #F4ECE1;
+      --dark-btn: #241E19;
+      --green: #2B6E4E;
+      --green-bg: #EDF5F0;
+      --red: #C53929;
+      --red-bg: #FDF1EE;
+      --amber: #B4691B;
+      --amber-bg: #FCF6EC;
+    }
+    html, body {
+      background-color: #FAF8F5 !important;
+      color: #241E19 !important;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      width: 100%;
+    }
+    .card, .tab-container, .metric-card {
+      background-color: #FFFFFF !important;
+      border-color: #E8E2D8 !important;
+    }
+    .btn-primary {
+      background-color: #241E19 !important;
+      color: #FFFFFF !important;
+    }
+    .btn-primary:hover {
+      background-color: #3C342C !important;
+    }
+  </style>
+
+  <!-- External Stylesheet with Cache-Buster -->
+  <link rel="stylesheet" href="/static/style.css?v=20261016_crema_v4_nosymbols">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/static/assets/logo.svg">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- TOP NAVIGATION -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <a href="/" class="brand-badge" aria-label="VeriDex AI Home">
+          <img src="/static/assets/logo.svg" alt="VeriDex AI Logo" class="brand-logo" width="42" height="42" onerror="this.src='/static/assets/logo.png'">
+          <div class="brand-titles">
+            <div class="brand-name">VERIDEX <span class="brand-ai">AI</span></div>
+            <p class="brand-sub">Autonomous On-Device Scam Protection</p>
+          </div>
+        </a>
+      </div>
+      <div class="nav-right">
+        <div class="status-pill status-offline">
+          <span>100% On-Device | Zero-Cloud</span>
+        </div>
+        <div class="status-pill status-engine">
+          <span id="badgeEngineNav">ONNX Runtime (CPU)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- METRICS STRIP -->
+    <section class="metrics-grid" aria-label="System Metrics">
+      <div class="metric-card blue">
+        <div class="metric-info">
+          <div class="metric-val" id="metricTotalScans">0</div>
+          <div class="metric-label">Total Local Scans</div>
+        </div>
+      </div>
+
+      <div class="metric-card red">
+        <div class="metric-info">
+          <div class="metric-val" id="metricThreatsBlocked">0</div>
+          <div class="metric-label">Threats Neutralized</div>
+        </div>
+      </div>
+
+      <div class="metric-card amber">
+        <div class="metric-info">
+          <div class="metric-val" id="metricTyposquats">0</div>
+          <div class="metric-label">Typosquats Flagged</div>
+        </div>
+      </div>
+
+      <div class="metric-card green">
+        <div class="metric-info">
+          <div class="metric-val" id="metricAvgLatency">&lt; 0.5 ms</div>
+          <div class="metric-label">Avg On-Device Latency</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN APP TABS -->
+    <main class="tab-container">
+      <nav class="tab-buttons-wrapper">
+        <div class="tab-buttons" role="tablist">
+          <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('url-scanner')">
+            <span>URL Inspector</span>
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('nlp-scanner')">
+            <span>NLP Manipulation</span>
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('threat-vault')">
+            <span>Encrypted Vault</span>
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('csv-scanner')">
+            <span>CSV Dataset Scanner</span>
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('architecture')">
+            <span>Benchmark & System</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- TAB 1: URL SCANNER -->
+      <section id="tab-url-scanner" class="tab-content active" role="tabpanel">
+        <div class="scanner-hero">
+          <div class="section-title-wrap">
+            <h2>Universal On-Device URL Inspector</h2>
+            <p>Autonomous scam protection across all web destinations &mdash; institutional domains, personal blogs, forums, executable links, and brand replicas &mdash; with zero cloud data transmission.</p>
+          </div>
+          
+          <div class="scan-input-box">
+            <input type="text" id="urlInput" placeholder="Enter any URL (e.g., https://example.com or suspicious link)..." autocomplete="off" spellcheck="false" />
+            <button class="btn-primary" id="btnScanUrl" onclick="scanUrl()">
+              <span>Verify On-Device</span>
+            </button>
+          </div>
+
+          <!-- Quick Test Samples Grouped Clearly -->
+          <div class="presets-container">
+            <div class="preset-group">
+              <span class="preset-label">Safe Examples:</span>
+              <div class="preset-chips">
+                <button class="sample-tag safe" onclick="loadSample('https://danluu.com/productivity-advice/')">Personal Blog</button>
+                <button class="sample-tag safe" onclick="loadSample('https://allrecipes.com/recipe/158140/spaghetti-carbonara/')">Recipe Site</button>
+                <button class="sample-tag safe" onclick="loadSample('https://cs.stanford.edu/research/ai')">Stanford University (.edu)</button>
+                <button class="sample-tag safe" onclick="loadSample('https://github.com/torvalds/linux')">Open Source Code</button>
+              </div>
+            </div>
+
+            <div class="preset-group">
+              <span class="preset-label">Threat Examples:</span>
+              <div class="preset-chips">
+                <button class="sample-tag danger" onclick="loadSample('https://scam.com')">Scam.com Domain</button>
+                <button class="sample-tag danger" onclick="loadSample('http://paypa1-security-verification.com/login')">PayPal Impersonation</button>
+                <button class="sample-tag danger" onclick="loadSample('http://account-verification-portal-urgent.com/login.php')">Generic Phishing Portal</button>
+                <button class="sample-tag danger" onclick="loadSample('http://system-speedup-utility.top/download/setup.exe')">Malware Binary (.exe)</button>
+                <button class="sample-tag danger" onclick="loadSample('http://claim-free-rewards-survey2026.xyz/win?click=99')">Financial Lure Scam</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- URL RESULT CONTAINER -->
+        <div id="urlResultContainer" class="result-container hidden">
+          <div class="result-header">
+            <div class="verdict-banner" id="verdictBanner">
+              <div class="verdict-text-block">
+                <h3 id="verdictTitle">ANALYSIS READY</h3>
+                <p id="verdictSub">On-device multi-layer evaluation complete.</p>
+              </div>
+            </div>
+            <div class="speed-meta">
+              <div class="badge-chip badge-category" id="badgeCategory">GENERAL_WEB</div>
+              <div class="badge-chip" id="badgeLatency">0.24 ms</div>
+              <div class="badge-chip" id="badgeEngine">ONNX Runtime</div>
+            </div>
+          </div>
+
+          <!-- Legitimate Website Recommendation Card (Visible for Replica / Phishing Sites) -->
+          <div id="replicaRecommendationBox" class="card replica-card hidden">
+            <div class="replica-card-inner">
+              <div class="replica-info">
+                <div class="replica-header-row">
+                  <h4>Verified Authentic Original Website</h4>
+                  <span id="replicaBrandBadge" class="brand-badge-pill">Brand</span>
+                </div>
+                <p id="replicaWarningText">The scanned destination appears to be an unauthorized replica. Here is the verified official legal website:</p>
+              </div>
+              <div class="replica-action">
+                <a id="replicaSafeLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-safe-nav">
+                  <span>Open Official Website</span>
+                  <span id="replicaOfficialDomain" class="official-domain-text"></span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-grid">
+            <!-- Left: Risk Gauge & Score -->
+            <div class="card result-card score-card">
+              <h4>Threat Probability</h4>
+              <div class="score-display">
+                <div class="score-circle" id="scoreCircle">
+                  <span id="scoreText">0%</span>
+                  <small>RISK INDEX</small>
+                </div>
+              </div>
+              <div class="score-details">
+                <div class="detail-row">
+                  <span>Inference Confidence:</span>
+                  <strong id="confidenceVal">100%</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Privacy Mode:</span>
+                  <strong class="highlight-green">100% Zero-Cloud</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Explainable AI Breakdown -->
+            <div class="card result-card xai-card">
+              <h4>Explainable AI (XAI) Indicators</h4>
+              <p class="xai-sub">On-device heuristic and ML risk factor decomposition:</p>
+              <ul class="xai-list" id="xaiList">
+                <!-- Injected via JS -->
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: NLP MANIPULATION CUES -->
+      <section id="tab-nlp-scanner" class="tab-content" role="tabpanel">
+        <div class="scanner-hero">
+          <div class="section-title-wrap">
+            <h2>On-Device NLP Manipulation Cue Analyzer</h2>
+            <p>Parses psychological persuasion techniques, artificial urgency pressure, legal coercion, and credential harvesting cues without transmitting text to external servers.</p>
+          </div>
+          
+          <div class="nlp-input-box">
+            <textarea id="nlpInput" rows="4" placeholder="Paste suspicious message text, phishing email, or SMS alert here..."></textarea>
+            <div class="nlp-toolbar">
+              <div class="preset-group nlp-presets">
+                <span class="preset-label">Test Templates:</span>
+                <div class="preset-chips">
+                  <button class="sample-tag danger" onclick="loadNlpPreset('urgency')">Urgency Coercion</button>
+                  <button class="sample-tag danger" onclick="loadNlpPreset('greed')">Crypto Lottery</button>
+                  <button class="sample-tag danger" onclick="loadNlpPreset('techsupport')">Fake Tech Support</button>
+                  <button class="sample-tag safe" onclick="loadNlpPreset('safe')">Standard Work Message</button>
+                </div>
+              </div>
+              <button class="btn-primary" id="btnScanNlp" onclick="scanNlp()">
+                <span>Analyze Text Cues</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NLP RESULT CONTAINER -->
+        <div id="nlpResultContainer" class="result-container hidden">
+          <div class="card nlp-result-card">
+            <div class="nlp-header">
+              <div class="nlp-badge" id="nlpThreatBadge">SUSPICIOUS</div>
+              <div class="nlp-summary" id="nlpSummaryText">Summary</div>
+              <div class="badge-chip" id="nlpLatency">0.15 ms</div>
+            </div>
+            <div class="cues-grid" id="cuesGrid">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: ENCRYPTED THREAT VAULT -->
+      <section id="tab-threat-vault" class="tab-content" role="tabpanel">
+        <div class="vault-hero">
+          <div class="vault-info">
+            <h2>Local Encrypted Threat Vault</h2>
+            <p>Inspection forensic telemetry is secured on-device with <strong>Windows DPAPI &amp; AES-256</strong> cryptography. No browsing history ever leaves the host.</p>
+          </div>
+          <div class="vault-actions">
+            <button class="btn-secondary" onclick="loadVaultLogs()">
+              <span>Refresh Vault</span>
+            </button>
+            <button class="btn-secondary" onclick="exportVaultReport()">
+              <span>Export Forensics</span>
+            </button>
+            <button class="btn-danger" onclick="clearVault()">
+              <span>Clear Audit</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="mobile-table-hint">Swipe horizontally to view all columns</div>
+          <div class="table-scroll-wrapper">
+            <table class="vault-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Target URL (Decrypted Locally)</th>
+                  <th>Verdict</th>
+                  <th>Risk Index</th>
+                  <th>Latency</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody id="vaultTableBody">
+                <tr>
+                  <td colspan="6" class="table-loading-cell">Loading encrypted vault...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CSV DATASET & BATCH SCAM SCANNER -->
+      <section id="tab-csv-scanner" class="tab-content" role="tabpanel">
+        <div class="vault-hero">
+          <div class="vault-info">
+            <h2>CSV Dataset &amp; Batch Scam Inspector</h2>
+            <p>Analyzes bulk URLs directly from <strong>data/veridex_dataset.csv</strong>, executes high-speed on-device ML detection, and retrains the model on demand.</p>
+          </div>
+          <div class="vault-actions">
+            <button class="btn-primary" id="btnRunCsvScan" onclick="runCsvBatchScan()">
+              <span>Scan All URLs in CSV</span>
+            </button>
+            <button class="btn-secondary" id="btnRetrainCsv" onclick="retrainModelFromCsv()">
+              <span>Retrain Model from CSV</span>
+            </button>
+            <button class="btn-secondary" onclick="exportCsvResults()">
+              <span>Export Results CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CSV Summary Stats Cards -->
+        <div id="csvSummaryStrip" class="metrics-grid hidden" style="margin-top: 18px;">
+          <div class="metric-card blue">
+            <div class="metric-info">
+              <div class="metric-val" id="csvTotalRows">0</div>
+              <div class="metric-label">Total CSV Rows</div>
+            </div>
+          </div>
+          <div class="metric-card red">
+            <div class="metric-info">
+              <div class="metric-val" id="csvThreatsFound">0</div>
+              <div class="metric-label">Scams Detected</div>
+            </div>
+          </div>
+          <div class="metric-card green">
+            <div class="metric-info">
+              <div class="metric-val" id="csvSafeFound">0</div>
+              <div class="metric-label">Safe Verified</div>
+            </div>
+          </div>
+          <div class="metric-card amber">
+            <div class="metric-info">
+              <div class="metric-val" id="csvThreatRatio">0%</div>
+              <div class="metric-label">Scam Ratio</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Retrain Status Box -->
+        <div id="retrainAlertBox" class="card retrain-box hidden" style="margin-top: 15px;">
+          <h4>Model Retraining Status</h4>
+          <p id="retrainMessage"></p>
+          <div id="retrainMetricsGrid" class="speed-meta" style="margin-top: 10px; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- CSV Results Table -->
+        <div class="card table-card" style="margin-top: 18px;">
+          <div class="mobile-table-hint">Swipe horizontally to view all columns</div>
+          <div class="table-scroll-wrapper">
+            <table class="vault-table">
+              <thead>
+                <tr>
+                  <th style="width: 48px;">#</th>
+                  <th>Target URL (from CSV)</th>
+                  <th>Verdict</th>
+                  <th>Risk Score</th>
+                  <th>Classification</th>
+                  <th>Key Indicators</th>
+                </tr>
+              </thead>
+              <tbody id="csvTableBody">
+                <tr>
+                  <td colspan="6" class="table-loading-cell">
+                    Click <strong>"Scan All URLs in CSV"</strong> to run batch on-device scam detection across the dataset.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: ARCHITECTURE & BENCHMARK -->
+      <section id="tab-architecture" class="tab-content" role="tabpanel">
+        <div class="card arch-card">
+          <div class="section-title-wrap">
+            <h2>Autonomous On-Device Pipeline</h2>
+            <p>100% private execution architecture running locally on the user's host CPU.</p>
+          </div>
+          
+          <div class="arch-diagram">
+            <div class="arch-step">
+              <div class="step-num">01</div>
+              <h4>Local Ingestion</h4>
+              <p>Silent clipboard observer &amp; local loopback REST interface</p>
+            </div>
+            <div class="arch-step">
+              <div class="step-num">02</div>
+              <h4>Feature Extraction</h4>
+              <p>26 Lexical, Typosquat, Entropy &amp; Punycode dimensions</p>
+            </div>
+            <div class="arch-step">
+              <div class="step-num">03</div>
+              <h4>ONNX Machine Learning</h4>
+              <p>Optimized CPU tree-ensemble inference in &lt; 0.5 ms</p>
+            </div>
+            <div class="arch-step">
+              <div class="step-num">04</div>
+              <h4>Encrypted DPAPI Vault</h4>
+              <p>Zero-cloud AES-256 encrypted local logging &amp; audit history</p>
+            </div>
+          </div>
+
+          <div class="benchmark-box">
+            <div class="bench-header">
+              <div>
+                <h3>On-Device Latency Benchmark</h3>
+                <p>Run 50 live inference iterations on-device to measure sub-millisecond execution times.</p>
+              </div>
+              <button class="btn-primary" id="btnBench" onclick="runBenchmark()">
+                <span>Run Latency Stress Test</span>
+              </button>
+            </div>
+            <div id="benchResults" class="bench-stats hidden">
+              <div class="bench-stat">
+                <span class="val" id="benchAvg">-</span>
+                <span class="lbl">Average Latency</span>
+              </div>
+              <div class="bench-stat">
+                <span class="val" id="benchMin">-</span>
+                <span class="lbl">Minimum Latency</span>
+              </div>
+              <div class="bench-stat">
+                <span class="val" id="benchP95">-</span>
+                <span class="lbl">p95 Latency</span>
+              </div>
+              <div class="bench-stat">
+                <span class="val" id="benchEngine">-</span>
+                <span class="lbl">Execution Provider</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <p>VeriDex AI | Autonomous On-Device Scam Protection Engine | BGSIT Hackathon 2026 | Team: Shreya S, Shirali S, Shreya S, Sinchana M</p>
+    </footer>
+  </div>
+
+  <!-- POPUP MODAL: REDIRECT TO OFFICIAL WEBSITE OF REPLICA SCAM -->
+  <div id="replicaRedirectModal" class="replica-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="replica-modal-card">
+      <div class="replica-modal-header">
+        <div class="replica-modal-pill-row">
+          <span class="replica-modal-pill danger">Replica Scam Detected</span>
+          <span id="modalBrandBadge" class="replica-modal-pill brand">Oracle</span>
+        </div>
+        <button class="replica-modal-close" onclick="closeReplicaModal()" aria-label="Close modal">Close</button>
+      </div>
+
+      <div class="replica-modal-body">
+        <h3 id="modalTitle">Unauthorized Replica Alert</h3>
+        <p id="modalDesc">The scanned link appears to be an unauthorized replica. Never enter credentials, passwords, or personal data on this site.</p>
+        
+        <div class="replica-modal-dest-card">
+          <div class="dest-comparison-row">
+            <span class="dest-comparison-label">Scanned Replica:</span>
+            <span id="modalScannedUrl" class="dest-comparison-val replica-val">https://orakle.com</span>
+          </div>
+          <div class="dest-comparison-row">
+            <span class="dest-comparison-label">Official Authentic Portal:</span>
+            <span id="modalOfficialDomain" class="dest-comparison-val official-val">oracle.com (Oracle Corporation)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="replica-modal-actions">
+        <button type="button" class="replica-modal-btn dismiss" onclick="closeReplicaModal()">Stay on This Page</button>
+        <a id="modalRedirectLink" href="#" target="_blank" rel="noopener noreferrer" class="replica-modal-btn redirect" onclick="closeReplicaModal()">
+          <span>Redirect to Official Website</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=20261016_crema_v5_popup"></script>
+</body>
+</html>

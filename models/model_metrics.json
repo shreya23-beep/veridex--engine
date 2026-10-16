@@ -1,0 +1,12 @@
+{
+  "accuracy": 100.0,
+  "precision": 100.0,
+  "recall": 100.0,
+  "f1_score": 100.0,
+  "roc_auc": 100.0,
+  "total_training_samples": 647,
+  "features_count": 26,
+  "source_dataset_csv": "veridex_dataset.csv",
+  "model_architecture": "RandomForest-120 (Trained from CSV Dataset)",
+  "scope": "Universal Web Verification (CSV Dataset Driven)"
+}
