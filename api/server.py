@@ -72,6 +72,11 @@ class QRScanRequest(BaseModel):
     payload: Optional[str] = None
     filename: Optional[str] = "qr_code.png"
 
+class FeedbackRetrainRequest(BaseModel):
+    url: str
+    is_threat: bool
+    notes: Optional[str] = ""
+
 # API Endpoints
 @app.get("/api/health")
 def health():
@@ -377,6 +382,72 @@ def reload_engine_endpoint():
     return {
         "status": "SUCCESS",
         "message": "Engine modules and ONNX runtime successfully reloaded!"
+    }
+
+@app.post("/api/model/feedback-retrain")
+def feedback_and_retrain(req: FeedbackRetrainRequest):
+    """
+    Real-time active learning endpoint:
+    1. Ingests user-submitted URL with user's verified label (Safe vs Threat)
+    2. Extracts 26 universal lexical & structural features in real-time (< 2ms)
+    3. Appends the sample to data/veridex_dataset.csv (or updates if exists)
+    4. Automatically retrains the model and recompiles models/veridex_model.onnx
+    5. Hot-reloads ONNX runtime engine in memory with zero downtime!
+    """
+    url = req.url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="URL cannot be empty")
+
+    label = 1 if req.is_threat else 0
+
+    import csv
+    from core.feature_extractor import extract_features, FEATURE_COLUMNS
+    from core.trainer import train_and_export_model, DEFAULT_DATASET_CSV
+
+    # Extract features for user input URL
+    features = extract_features(url)
+
+    dataset_path = DEFAULT_DATASET_CSV
+    rows = []
+    updated = False
+
+    if os.path.exists(dataset_path):
+        with open(dataset_path, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or (["url"] + FEATURE_COLUMNS + ["label"])
+            for row in reader:
+                if row.get("url") == url:
+                    row["label"] = str(label)
+                    for col in FEATURE_COLUMNS:
+                        if col in features:
+                            row[col] = str(features[col])
+                    updated = True
+                rows.append(row)
+    else:
+        fieldnames = ["url"] + FEATURE_COLUMNS + ["label"]
+
+    if not updated:
+        new_row = {"url": url, "label": str(label)}
+        for col in FEATURE_COLUMNS:
+            new_row[col] = str(features.get(col, 0))
+        rows.append(new_row)
+
+    with open(dataset_path, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    metrics = train_and_export_model(csv_path=dataset_path)
+    engine._load_model()
+
+    return {
+        "status": "SUCCESS",
+        "action": "UPDATED" if updated else "ADDED",
+        "url": url,
+        "assigned_label": "THREAT / SCAM" if label == 1 else "SAFE & VERIFIED",
+        "total_dataset_samples": len(rows),
+        "metrics": metrics,
+        "message": f"Real-time user feedback incorporated! Model retrained and ONNX runtime updated ({len(rows)} samples)."
     }
 
 @app.get("/api/dataset/preview")

@@ -72,6 +72,8 @@ function loadNlpPreset(type) {
 }
 
 // URL Scanner
+let currentScannedUrl = "";
+
 async function scanUrl() {
   const input = document.getElementById('urlInput');
   const url = input ? input.value.trim() : "";
@@ -79,6 +81,7 @@ async function scanUrl() {
     alert("Please enter a valid target URL.");
     return;
   }
+  currentScannedUrl = url;
 
   const btn = document.getElementById('btnScanUrl');
   if (btn) {
@@ -284,6 +287,43 @@ function renderUrlResult(data) {
   // Smooth scroll into results on mobile
   if (window.innerWidth <= 768) {
     container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// Active Learning & User Input Model Retraining
+async function submitUserFeedback(isThreat) {
+  if (!currentScannedUrl) {
+    alert("Please scan a URL first.");
+    return;
+  }
+  const labelText = isThreat ? "CONFIRMED SCAM / THREAT" : "VERIFIED SAFE";
+  const ok = confirm(`Retrain VeriDex AI on real-time user input?\n\nTarget URL: ${currentScannedUrl}\nAssigned Label: ${labelText}\n\nThe system will extract 26 structural features in real-time, append to the dataset, retrain the model, and recompile the ONNX runtime engine.`);
+  if (!ok) return;
+
+  const btnSafe = document.getElementById('btnFeedbackSafe');
+  const btnThreat = document.getElementById('btnFeedbackThreat');
+  if (btnSafe) btnSafe.disabled = true;
+  if (btnThreat) btnThreat.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/model/feedback-retrain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: currentScannedUrl, is_threat: isThreat })
+    });
+    const data = await res.json();
+    if (data.status === 'SUCCESS') {
+      alert(`🎉 Model Successfully Retrained on Real-Time Input!\n\n• Target: ${data.url}\n• Assigned Label: ${data.assigned_label}\n• Total Dataset: ${data.total_dataset_samples} samples\n• Model Accuracy: ${data.metrics.accuracy}%\n• Model Precision: ${data.metrics.precision}%\n\nThe ONNX model was recompiled and hot-reloaded with zero downtime.`);
+      // Re-scan URL to show the updated on-device inference live!
+      scanUrl();
+    } else {
+      alert("Retraining feedback note: " + (data.message || JSON.stringify(data)));
+    }
+  } catch (err) {
+    alert("Feedback retraining failed: " + err.message);
+  } finally {
+    if (btnSafe) btnSafe.disabled = false;
+    if (btnThreat) btnThreat.disabled = false;
   }
 }
 
