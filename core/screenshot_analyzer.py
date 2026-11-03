@@ -13,7 +13,12 @@ import re
 import time
 import base64
 from typing import Dict, Any, List, Optional
-from PIL import Image
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    Image = None
+    HAS_PIL = False
 
 from core.ml_engine import engine
 from core.nlp_analyzer import nlp_analyzer
@@ -116,7 +121,7 @@ class MessageScreenshotAnalyzer:
         }
 
         # Inspect image metadata if provided
-        if image_bytes:
+        if image_bytes and HAS_PIL:
             try:
                 img = Image.open(io.BytesIO(image_bytes))
                 image_info["width"], image_info["height"] = img.size

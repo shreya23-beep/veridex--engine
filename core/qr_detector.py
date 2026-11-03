@@ -16,7 +16,12 @@ import time
 import base64
 import urllib.parse
 from typing import Dict, Any, List, Optional
-import cv2
+try:
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    cv2 = None
+    HAS_CV2 = False
 import numpy as np
 
 from core.ml_engine import engine
@@ -39,9 +44,9 @@ class ScamQRDetector:
     """
 
     def __init__(self):
-        self._detector = cv2.QRCodeDetector()
+        self._detector = cv2.QRCodeDetector() if HAS_CV2 else None
         try:
-            self._encoder = cv2.QRCodeEncoder_create()
+            self._encoder = cv2.QRCodeEncoder_create() if HAS_CV2 else None
         except Exception:
             self._encoder = None
 
@@ -50,6 +55,9 @@ class ScamQRDetector:
         Decodes QR code matrix from raw image bytes or base64 data URL.
         Uses multi-pass thresholding and grayscale enhancements for high detection accuracy.
         """
+        if not HAS_CV2 or self._detector is None:
+            return {"success": False, "payload": "", "error": "OpenCV headless decoder not initialized."}
+
         raw_bytes = None
         if image_bytes:
             raw_bytes = image_bytes
@@ -110,6 +118,8 @@ class ScamQRDetector:
         Generates a crisp PNG base64 QR code data URL using native OpenCV QRCodeEncoder.
         Runs 100% offline with zero cloud or third-party dependencies.
         """
+        if not HAS_CV2:
+            return ""
         try:
             if not self._encoder:
                 self._encoder = cv2.QRCodeEncoder_create()
