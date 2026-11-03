@@ -28,6 +28,12 @@
     }
   ],
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8484/*",
+    "http://localhost:8484/*",
+    "<all_urls>"
   ]
 }

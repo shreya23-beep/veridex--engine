@@ -53,6 +53,15 @@ MANIPULATION_CATEGORIES = {
             r"\b(microsoft\s+support\s+alert|windows\s+defender\s+warning)\b"
         ],
         "description": "Impersonation of technical support urging installation of remote administration tools."
+    },
+    "WHATSAPP_VIRAL_LURE": {
+        "weight": 0.30,
+        "patterns": [
+            r"\b(forwarded\s+(?:many\s+times|frequently)|share\s+with\s+\d+\s*(?:groups?|friends?))\b",
+            r"\b(free\s+\d+\s*(?:gb|months?|days?)\s+(?:recharge|data)|recharge\s+offer|free\s+recharge|govt\s+(?:free|giving)|yojana)\b",
+            r"\b(claim\s+(?:your\s+)?offer|click\s+(?:here\s+)?to\s+claim|whatsapp\s+lottery|kbc\s+lottery)\b"
+        ],
+        "description": "WhatsApp forwarded viral lure promising fake mobile recharges, government giveaways, or group forward requirements."
     }
 }
 

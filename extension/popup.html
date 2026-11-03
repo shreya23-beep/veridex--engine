@@ -1,99 +1,503 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeriDex AI — Browser Companion</title>
   <style>
-    body {
-      width: 280px;
-      margin: 0;
-      padding: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #FAF8F5;
-      color: #241E19;
+    :root {
+      --bg: #FAF8F5;
+      --card-bg: #FFFFFF;
+      --card-subtle: #F6F3ED;
+      --border: #E8E2D8;
+      --border-focus: #8C6842;
+      --text: #241E19;
+      --muted: #756A63;
+      --brand: #8C6842;
+      --green: #2B6E4E;
+      --green-bg: #EDF5F0;
+      --red: #C53929;
+      --red-bg: #FDF1EE;
+      --amber: #B4691B;
+      --amber-bg: #FCF6EC;
     }
-    .header {
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 350px;
+      padding: 14px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.35;
+      font-size: 13px;
+    }
+
+    .brand-header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid #E8E2D8;
-      padding-bottom: 12px;
-      margin-bottom: 12px;
-    }
-    .header img {
-      width: 28px;
-      height: 28px;
-    }
-    .header h2 {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 700;
-    }
-    .header p {
-      margin: 0;
-      font-size: 11px;
-      color: #756A63;
-    }
-    .status-box {
-      background: #FFFFFF;
-      border: 1px solid #E8E2D8;
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      font-size: 12px;
-    }
-    .status-row {
-      display: flex;
       justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .brand-logo {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .brand-ai {
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 1px 4px;
+      background: #F4ECE1;
+      border-radius: 4px;
+      margin-left: 2px;
+    }
+
+    .pill-offline {
+      font-size: 10.5px;
+      font-weight: 600;
+      background: var(--green-bg);
+      color: var(--green);
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(43, 110, 78, 0.2);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .card-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .site-domain-box {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 8px;
+      background: var(--card-subtle);
+      border-radius: 6px;
       margin-bottom: 6px;
     }
-    .status-row:last-child {
-      margin-bottom: 0;
-    }
-    .btn {
-      display: block;
-      width: 100%;
-      box-sizing: border-box;
-      padding: 8px 12px;
-      background: #241E19;
-      color: #FFFFFF;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
+
+    .site-domain {
+      font-family: "JetBrains Mono", Consolas, monospace;
       font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .site-url-sub {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 8px;
+    }
+
+    .ip-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-subtle);
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    .ip-box strong {
+      font-family: monospace;
+      color: var(--green);
+    }
+
+    .ip-box.threat strong {
+      color: var(--red);
+    }
+
+    .verdict-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .verdict-banner.safe {
+      background: var(--green-bg);
+      color: var(--green);
+      border: 1px solid rgba(43, 110, 78, 0.25);
+    }
+
+    .verdict-banner.threat {
+      background: var(--red-bg);
+      color: var(--red);
+      border: 1px solid rgba(197, 57, 41, 0.3);
+    }
+
+    /* Threat Alert Box */
+    .threat-alert-box {
+      display: none;
+      background: var(--red-bg);
+      border: 1px solid rgba(197, 57, 41, 0.35);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .threat-alert-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--red);
+      margin-bottom: 4px;
+    }
+
+    .threat-alert-text {
+      font-size: 11.5px;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+
+    .threat-btn-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-threat {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 5px;
+      border: none;
       cursor: pointer;
       text-align: center;
       text-decoration: none;
+      display: inline-block;
     }
-    .btn:hover {
+
+    .btn-1930 {
+      background: var(--red);
+      color: #FFFFFF;
+    }
+
+    .btn-gov-in {
+      background: #1E3A8A;
+      color: #FFFFFF;
+    }
+
+    .btn-official {
+      background: var(--green);
+      color: #FFFFFF;
+    }
+
+    /* Cyber Incident Report Card */
+    .report-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .rc-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .rc-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--brand);
+      text-transform: uppercase;
+    }
+
+    .rc-id {
+      font-family: monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .rc-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .btn-copy-rc {
+      width: 100%;
+      padding: 6px 10px;
+      background: #F4ECE1;
+      color: var(--brand);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-copy-rc:hover {
+      background: #EAE1D2;
+    }
+
+    /* Other Cyber Related Tools */
+    .quick-scanner-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .quick-scanner-input {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 11.5px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--card-subtle);
+      color: var(--text);
+      outline: none;
+    }
+
+    .quick-scanner-input:focus {
+      border-color: var(--border-focus);
+    }
+
+    .btn-quick-scan {
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--brand);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .cyber-advisory-pill {
+      background: var(--card-subtle);
+      border-left: 3px solid var(--brand);
+      padding: 6px 8px;
+      border-radius: 0 5px 5px 0;
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    .cyber-advisory-pill strong {
+      color: var(--brand);
+    }
+
+    /* Portal Block */
+    .veridex-portal-block {
+      background: #FFFFFF;
+      border: 1.5px solid var(--brand);
+      border-radius: 9px;
+      padding: 12px;
+      margin-top: 6px;
+      box-shadow: 0 2px 8px rgba(140, 104, 66, 0.08);
+    }
+
+    .portal-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 4px;
+    }
+
+    .portal-header h3 {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .portal-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+
+    .btn-enter-website {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--text);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+
+    .btn-enter-website:hover {
       background: #3C342C;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="logo.png" alt="VeriDex">
-    <div>
-      <h2>VeriDex AI</h2>
-      <p>On-Device Scam Protection</p>
+  <!-- BRAND HEADER -->
+  <header class="brand-header">
+    <div class="brand-left">
+      <img src="logo.png" alt="VeriDex Logo" class="brand-logo">
+      <span class="brand-title">VERIDEX <span class="brand-ai">AI</span></span>
+    </div>
+    <span class="pill-offline">100% On-Device</span>
+  </header>
+
+  <!-- BLOCK 1: CURRENTLY OPENED WEBSITE SAFETY & IP ADDRESS -->
+  <section class="card" id="currentSiteCard">
+    <div class="card-title-row">
+      <span class="card-label">Currently Opened Website</span>
+      <span id="siteProtocolBadge" style="font-size: 10px; color: var(--muted);">Checking...</span>
+    </div>
+
+    <div class="site-domain-box">
+      <span class="site-domain" id="siteDomain">Resolving active tab...</span>
+    </div>
+    <div class="site-url-sub" id="siteUrl">Reading URL...</div>
+
+    <!-- IP Address Always Included -->
+    <div class="ip-box" id="ipBox">
+      <span>IP Address:</span>
+      <strong id="siteIpVal">Resolving...</strong>
+    </div>
+
+    <!-- Live Verdict Banner -->
+    <div class="verdict-banner safe" id="verdictBanner">
+      <span id="verdictText">Evaluating On-Device...</span>
+      <span id="verdictLatency">-- ms</span>
+    </div>
+  </section>
+
+  <!-- THREAT WARNING BANNER (Register on gov.in or dial 1930) -->
+  <div class="threat-alert-box" id="threatAlertBox">
+    <div class="threat-alert-title" id="threatAlertTitle">⚠️ SCAM DETECTED — CULPRIT IP TRACED</div>
+    <p class="threat-alert-text" id="threatAlertText">
+      Culprit server IP resolved. Register a complaint on cybercrime.gov.in or dial 1930 from your phone dialpad immediately.
+    </p>
+    <div class="threat-btn-row">
+      <a href="tel:1930" class="btn-threat btn-1930" id="btnDial1930">Dial 1930</a>
+      <a href="https://cybercrime.gov.in" target="_blank" class="btn-threat btn-gov-in">cybercrime.gov.in</a>
+      <a href="#" target="_blank" class="btn-threat btn-official" id="btnGoOfficial" style="display: none;">Official Site</a>
     </div>
   </div>
 
-  <div class="status-box">
-    <div class="status-row">
-      <span style="color: #756A63;">Protection Mode:</span>
-      <strong style="color: #2B6E4E;">100% Offline</strong>
+  <!-- BLOCK 2: CYBER INCIDENT REPORT CARD -->
+  <section class="report-card">
+    <div class="rc-title-row">
+      <span class="rc-label">Cyber Incident Report Card</span>
+      <span class="rc-id" id="rcIncidentId">VDX-INCIDENT-000000</span>
     </div>
-    <div class="status-row">
-      <span style="color: #756A63;">AI Engine:</span>
-      <span>ONNX Runtime</span>
-    </div>
-    <div class="status-row">
-      <span style="color: #756A63;">Floating Badge:</span>
-      <span style="color: #2B6E4E;">Active</span>
-    </div>
-  </div>
+    <p class="rc-desc">Tamper-evident forensic dossier generated on-device with zero cloud reliance.</p>
+    <button class="btn-copy-rc" id="btnCopyReportCard">📋 Copy Incident Report Card (Dossier)</button>
+  </section>
 
-  <button class="btn" id="btnDashboard">Open Cyber-Dashboard</button>
+  <!-- BLOCK 3: QUICK URL SCANNER & CYBER ADVISORY (CYBER RELATED TOOLS) -->
+  <section class="card">
+    <div class="card-title-row">
+      <span class="card-label">Quick URL Verifier</span>
+      <span style="font-size: 10px; color: var(--green); font-weight: 600;">ONNX Active</span>
+    </div>
+    <div class="quick-scanner-row">
+      <input type="text" id="quickUrlInput" class="quick-scanner-input" placeholder="Paste link to test..." />
+      <button class="btn-quick-scan" id="btnQuickScan">Verify Link</button>
+    </div>
+    <div class="cyber-advisory-pill">
+      <strong>Cyber Safety Advisory:</strong> Never install screen-sharing APKs (AnyDesk/RustDesk) or share OTPs for bank KYC updates.
+    </div>
+  </section>
+
+  <!-- BLOCK 4: DEDICATED OFFICIAL VERIDEX AI WEB BROWSER BLOCK -->
+  <section class="veridex-portal-block">
+    <div class="portal-header">
+      <img src="logo.png" alt="VeriDex AI" style="width: 17px; height: 17px;">
+      <h3>VeriDex AI Security Center</h3>
+    </div>
+    <p class="portal-desc">
+      Launch the complete on-device cyber defense dashboard, Message Screenshot Analyzer, and encrypted vault.
+    </p>
+
+    <!-- Primary Action: Open Official VeriDex AI Web Browser -->
+    <button class="btn-enter-website" id="btnLaunchDashboard">
+      <span>Open Official VeriDex AI Web Browser</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+      </svg>
+    </button>
+  </section>
+
+  <footer class="footer-note">
+    VeriDex AI &bull; Zero Cloud &bull; 100% Privacy Preserved
+  </footer>
 
   <script src="popup.js"></script>
 </body>

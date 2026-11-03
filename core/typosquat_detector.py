@@ -136,6 +136,8 @@ def extract_domain_parts(url: str):
 
     return {
         "hostname": hostname,
+        "netloc": parsed.netloc or "",
+        "username": parsed.username or "",
         "unicode_domain": unicode_domain,
         "is_punycode": is_punycode,
         "domain_name": domain_name,
@@ -153,6 +155,8 @@ def analyze_typosquatting(url: str) -> dict:
     parts = extract_domain_parts(url)
     domain = parts["domain_name"].lower()
     hostname = parts["hostname"].lower()
+    netloc = parts.get("netloc", "").lower()
+    username = parts.get("username", "").lower()
     subdomains = parts["subdomains"]
     normalized_domain = normalize_homoglyphs(domain)
 
@@ -172,6 +176,42 @@ def analyze_typosquatting(url: str) -> dict:
         result["severity"] = "HIGH"
         result["reason"] = f"Punycode homograph attack detected ({parts['hostname']} -> {parts['unicode_domain']})"
         result["confidence"] = 0.95
+
+    # 1.5. URL Obfuscation / Symbol Squatting / Userinfo Deception using '@'
+    raw_authority = netloc.split(":")[0] if ":" in netloc else netloc
+    if "@" in raw_authority or "@" in url:
+        # A) Symbol homoglyph in authority/domain (e.g. "payp@l.com", "amaz@n.com")
+        # Replace '@' with 'a' and normalize leetspeak/homoglyphs
+        authority_sub = normalize_homoglyphs(raw_authority.replace("@", "a"))
+        auth_clean = re.sub(r"^https?://", "", authority_sub).split("/")[0].split(":")[0]
+        auth_parts = auth_clean.split(".")
+        if len(auth_parts) >= 3 and f"{auth_parts[-2]}.{auth_parts[-1]}" in TWO_PART_TLDS:
+            candidate_domain = auth_parts[-3]
+        elif len(auth_parts) >= 2:
+            candidate_domain = auth_parts[-2]
+        else:
+            candidate_domain = auth_clean
+
+        for brand in HIGH_VALUE_TARGETS:
+            if candidate_domain == brand or levenshtein_distance(candidate_domain, brand) <= 1:
+                result["is_typosquat"] = True
+                result["spoofed_brand"] = brand
+                result["severity"] = "CRITICAL"
+                result["reason"] = f"Symbol-squatting homoglyph '@' used to impersonate '{brand}' (detected '{raw_authority}')"
+                result["confidence"] = 0.99
+                return result
+
+        # B) Userinfo brand masking (e.g. "https://paypal.com@attacker-site.xyz" or "paypal@attacker.com")
+        if username:
+            username_norm = normalize_homoglyphs(username.replace("@", "a"))
+            for brand in HIGH_VALUE_TARGETS:
+                if (brand in username_norm or username_norm.startswith(brand)) and hostname != brand and not hostname.endswith("." + brand + ".com"):
+                    result["is_typosquat"] = True
+                    result["spoofed_brand"] = brand
+                    result["severity"] = "CRITICAL"
+                    result["reason"] = f"URL authority masking: Brand '{brand}' placed in userinfo before '@' to disguise destination host '{hostname}'"
+                    result["confidence"] = 0.99
+                    return result
 
     # 2. Check if a high-value brand is trapped in a subdomain
     # e.g. "paypal.com.attacker-controlled.xyz"

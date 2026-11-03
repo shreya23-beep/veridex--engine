@@ -78,9 +78,10 @@ class ClipboardInterceptor:
 
             if result["is_threat"]:
                 reasons = "; ".join(result["risk_factors"][:2])
+                server_ip = result.get("server_ip") or "Traced"
                 self._notify_user(
                     "VeriDex AI Scam Alert",
-                    f"Warning! Copied link flagged as {result['verdict']}.\n{reasons}"
+                    f"Warning! Copied link flagged as {result['verdict']}.\nCulprit Server IP: {server_ip}\nDial 1930 to report to Cybercrime Helpline.\n{reasons}"
                 )
                 if self.on_threat_callback:
                     self.on_threat_callback(result)

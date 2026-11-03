@@ -404,9 +404,16 @@ def resolve_legitimate_website(
     if spoofed_brand and spoofed_brand.lower() in OFFICIAL_BRAND_REGISTRY:
         target_key = spoofed_brand.lower()
     else:
-        # 2. Check hostname and path for known brand tokens
+        # 2. Check hostname, path, and normalized authority for known brand tokens
+        raw_normalized = raw_lower.replace("@", "a")
         for brand_key in OFFICIAL_BRAND_REGISTRY.keys():
-            if brand_key in hostname or f"-{brand_key}-" in hostname or f"{brand_key}id" in hostname or f"{brand_key}-" in hostname:
+            if (
+                brand_key in hostname or
+                f"-{brand_key}-" in hostname or
+                f"{brand_key}id" in hostname or
+                f"{brand_key}-" in hostname or
+                brand_key in raw_normalized
+            ):
                 target_key = brand_key
                 break
 

@@ -20,6 +20,7 @@ from .feature_extractor import (
 )
 from .typosquat_detector import analyze_typosquatting
 from .brand_resolver import resolve_legitimate_website
+from .ip_resolver import resolve_ip_intelligence
 
 MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models")
 ONNX_MODEL_PATH = os.path.join(MODELS_DIR, "veridex_model.onnx")
@@ -60,7 +61,7 @@ class OnDeviceMLEngine:
             except Exception as e:
                 print(f"[ML_ENGINE] Error loading joblib model: {e}")
 
-    def inspect_url(self, url: str) -> dict:
+    def inspect_url(self, url: str, source: Optional[str] = None, context_text: Optional[str] = None) -> dict:
         """
         Performs multi-layered universal on-device inspection for ANY URL:
         1. Brand Typosquatting / Homoglyph heuristics
@@ -68,6 +69,7 @@ class OnDeviceMLEngine:
         3. Local ONNX ML prediction
         4. Domain & Intent Categorization
         5. Explainable AI (XAI) risk & trust factor synthesis
+        6. Web Server IP Address Resolution & 1930 Cybercrime Reporting Dossier
         """
         start_time = time.perf_counter()
         raw_url = url.strip()
@@ -132,6 +134,11 @@ class OnDeviceMLEngine:
         if features["scam_keyword_count"] >= 1:
             combined_risk_score = max(combined_risk_score, 92.0)
 
+        # URL obfuscation using '@' symbol (userinfo masking or symbol homoglyph squatting)
+        if features["has_at_symbol"] == 1:
+            if typosquat["is_typosquat"] or ("@" in raw_url.split("?")[0].split("#")[0]):
+                combined_risk_score = max(combined_risk_score, 95.0)
+
         # Executable binary delivery check
         if features["has_executable_payload"] == 1:
             combined_risk_score = max(combined_risk_score, 88.0)
@@ -147,6 +154,11 @@ class OnDeviceMLEngine:
         # Direct IP address
         if features["has_ip_address"] == 1:
             combined_risk_score = max(combined_risk_score, 85.0)
+
+        # Viral WhatsApp scam lures or unauthorized WhatsApp domain impersonations
+        url_lower = raw_url.lower()
+        if ("whatsapp" in url_lower or "wa.me" in url_lower) and not ("whatsapp.com" in url_lower or url_lower.startswith("https://wa.me/")):
+            combined_risk_score = max(combined_risk_score, 94.0)
 
         # Trusted institutions (e.g. .edu, .gov with HTTPS) get verified safe boost
         if url_classification.get("type_badge") == "TRUSTED_INSTITUTION" and not typosquat["is_typosquat"] and features["has_executable_payload"] == 0 and url_classification.get("risk_nature") not in ("CONFIRMED_THREAT", "HIGH_RISK", "MALWARE_RISK"):
@@ -210,6 +222,7 @@ class OnDeviceMLEngine:
             )
 
         # Verdict assignment
+        is_threat = combined_risk_score >= 50
         if combined_risk_score >= 70:
             verdict = "PHISHING / THREAT DETECTED"
             threat_color = "#ef4444"  # Red
@@ -222,13 +235,87 @@ class OnDeviceMLEngine:
             if not risk_factors:
                 risk_factors = trust_signals if trust_signals else ["Clean lexical structure, no threat signatures or manipulation patterns found."]
 
+        # 8. Web Server IP Address Resolution & 1930 Cyber Crime Helpline Synthesis
+        ip_intel = resolve_ip_intelligence(
+            url=raw_url,
+            is_threat=is_threat,
+            spoofed_brand=spoofed_brand,
+            source=source,
+            context_text=context_text
+        )
+
+        if is_threat or combined_risk_score >= 40:
+            risk_factors.append(
+                f"Culprit Server IP: Host server resolved at {ip_intel['server_ip']} ({ip_intel['isp']}). Reportable to Cyber Crime Helpline 1930."
+            )
+            if ip_intel["is_whatsapp_lure"]:
+                risk_factors.insert(
+                    1 if legitimate_suggestion else 0,
+                    f"WhatsApp Threat Vector: {ip_intel['whatsapp_reason']}."
+                )
+
+        # Generate structured Report Card Object
+        incident_id = f"VDX-URL-{int(time.time() * 1000) % 1000000:06d}"
+        timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S')
+        threat_level = "CRITICAL" if combined_risk_score >= 70 else ("SUSPICIOUS" if combined_risk_score >= 40 else "SAFE")
+        culprit_server_ip = ip_intel.get("server_ip", "127.0.0.1")
+        cyber_action_instruction = (
+            f"SCAM DETECTED: Culprit Server IP {culprit_server_ip}. "
+            "Register a complaint on cybercrime.gov.in or dial 1930 from your dialpad immediately."
+            if is_threat else "Destination verified safe. No cybercrime complaint required."
+        )
+
+        full_dossier = (
+            f"====================================================================\n"
+            f"          OFFICIAL CYBER INCIDENT REPORT CARD\n"
+            f"  Ministry of Home Affairs (I4C) Compliant Security Forensics\n"
+            f"====================================================================\n"
+            f"Report ID:          {incident_id}\n"
+            f"Timestamp:          {timestamp_str}\n"
+            f"Scanned Target:     {raw_url}\n"
+            f"Verdict:            {verdict}\n"
+            f"Risk Index:         {round(combined_risk_score, 1)}% ({threat_level})\n"
+            f"Culprit Server IP:  {culprit_server_ip}\n"
+            f"Hosting ISP / Net:  {ip_intel.get('isp', 'Unknown')}\n"
+            f"Server Location:    {ip_intel.get('server_location', 'Unknown')}\n"
+            + (f"Replica Target:     Impersonating {legitimate_suggestion['spoofed_brand']}\n" if legitimate_suggestion else "")
+            + f"Violations Flagged: {', '.join(risk_factors[:4]) if risk_factors else 'None'}\n"
+            f"--------------------------------------------------------------------\n"
+            f"Action Required:\n"
+            f"  1. Register incident online: https://cybercrime.gov.in\n"
+            f"  2. Dial national helpline:  1930 (from phone dialpad)\n"
+            f"  3. Report Culprit Server IP {culprit_server_ip} to cyber authorities\n"
+            f"====================================================================\n"
+            f"Verified autonomously on-device by VeriDex AI Engine (Zero-Cloud DPAPI Vault)."
+        )
+
+        report_card = {
+            "incident_id": incident_id,
+            "timestamp": timestamp_str,
+            "source_type": "URL_INSPECTION",
+            "verdict": verdict,
+            "is_threat": is_threat,
+            "threat_level": threat_level,
+            "threat_color": threat_color,
+            "risk_score": round(combined_risk_score, 1),
+            "target": raw_url,
+            "culprit_server_ip": culprit_server_ip,
+            "isp": ip_intel.get("isp", "Local Network"),
+            "server_location": ip_intel.get("server_location", "Unknown"),
+            "indicators": risk_factors if is_threat else trust_signals,
+            "action_notice": cyber_action_instruction,
+            "complaint_url": "https://cybercrime.gov.in",
+            "helpline_dialpad": "1930",
+            "full_dossier_text": full_dossier
+        }
+
         return {
             "url": raw_url,
             "verdict": verdict,
             "threat_color": threat_color,
             "risk_score": round(combined_risk_score, 1),
             "confidence": round(max(ml_probability, 1.0 - ml_probability) * 100, 1),
-            "is_threat": combined_risk_score >= 50,
+            "is_threat": is_threat,
             "latency_ms": latency_ms,
             "engine": self.model_type,
             "classification": url_classification,
@@ -236,7 +323,11 @@ class OnDeviceMLEngine:
             "trust_signals": trust_signals,
             "typosquat_details": typosquat,
             "legitimate_website_suggestion": legitimate_suggestion,
-            "features": features
+            "features": features,
+            "server_ip": ip_intel["server_ip"],
+            "ip_intelligence": ip_intel,
+            "cyber_helpline_1930": ip_intel["cyber_helpline_1930"],
+            "report_card": report_card
         }
 
 # Global singleton engine instance

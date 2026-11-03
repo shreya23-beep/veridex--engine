@@ -1,7 +1,7 @@
 # VeriDex AI: Autonomous On-Device Scam Protection
 
 > **100% Private, Offline & Zero-Cloud Reliance**  
-> Developed for the **BGSIT Hackathon** — *Theme: Digital Safety and Cybersecurity*  
+> *Theme: Digital Safety and Cybersecurity*  
 > **Team:** Shreya S, Shirali S, Shreya S, Sinchana M  
 
 ---
@@ -58,18 +58,26 @@ Modern users, especially non-technical users, face phishing, typosquatting, and 
 
 ## Quick Start Guide
 
-### 1. Launch the Interactive Web Cyber-Defense Dashboard
+### 1. Launch Silent Background Scam Protection (Recommended)
+Runs VeriDex silently in the background with zero terminal clutter. As soon as you open any app, the VeriDex badge docks to the window and verifies whether the app or website URL is safe:
+```cmd
+start_background.bat
+```
+- To check background status: `status_background.bat`
+- To stop background protection: `stop_background.bat`
+
+### 2. Launch Universal Desktop Window Companion (Interactive)
+Starts the always-on-top auto-docking desktop badge with live console output:
+```bash
+python run_floating_overlay.py
+```
+
+### 3. Launch the Interactive Web Cyber-Defense Dashboard
 Runs the local API server and automatically opens the interactive dashboard in your browser:
 ```bash
 python run_web_dashboard.py
 ```
 *Access via:* `http://127.0.0.1:8484`
-
-### 2. Launch the Native Windows Desktop Application
-Starts the dark-slate desktop app with real-time clipboard monitoring and toast alerts:
-```bash
-python run_desktop_app.py
-```
 
 ### 3. Run Batch Scam Detection from CSV Dataset
 Reads the 26-feature dataset from `data/veridex_dataset.csv`, scans all rows on-device, and outputs `veridex_scam_detection_results.csv`:
@@ -118,3 +126,14 @@ python -m unittest tests/test_engine.py
 - Detects when a phishing/replica URL targets an established organization (e.g. PayPal, Apple, Chase, Google, Microsoft, Amazon, Netflix, Steam, Binance).
 - Automatically suggests the authentic legal website (e.g., `https://www.paypal.com`), displays the verified domain, and offers a safe one-click navigation link.
 - Fully supported across the **Web Cyber Dashboard**, **Native Windows App**, and **CSV Batch Scanner Export**.
+
+### 6. Universal Active Window Auto-Docking & App Safety Inspector
+- **Runs silently in the background:** Tracks foreground applications using Windows native hooks.
+- **Auto-docks to the active application window:** Moves seamlessly to the upper-right corner of Chrome, Edge, WhatsApp, Word, etc., as soon as the user opens or switches to the app.
+- **Live Safety Verification:**
+  - **Web Browsers:** Extracts the active website URL/domain, evaluates threat probability in real time, and turns Green (Safe) or Red (Scam Blocked).
+  - **Desktop Apps:** Validates binary origin, digital trust, and path integrity (WhatsApp, Word, VS Code, etc.).
+
+### 7. Culprit Server IP Forensics & National 1930 Cyber Helpline
+- Automatically traces the culprit web server IP address of phishing domains, WhatsApp fake recharges, and prize lures.
+- **National Cybercrime Helpline 1930 Integration:** 1-click telephone call (`tel:1930`), official portal shortcut (`cybercrime.gov.in`), and pre-formatted complaint dossier for instant police reporting.

@@ -7,7 +7,7 @@ real-time clipboard monitoring, and the web cyber-defense dashboard.
 import os
 import time
 from typing import Dict, Any, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -15,6 +15,8 @@ from pydantic import BaseModel
 
 from core.ml_engine import engine
 from core.nlp_analyzer import nlp_analyzer
+from core.screenshot_analyzer import screenshot_analyzer
+from core.qr_detector import qr_detector
 from security.threat_db import threat_db
 from daemon.clipboard_watcher import interceptor
 
@@ -58,6 +60,16 @@ class WhitelistRequest(BaseModel):
 class BlacklistRequest(BaseModel):
     pattern: str
     notes: Optional[str] = ""
+
+class ScreenshotScanRequest(BaseModel):
+    image_base64: Optional[str] = None
+    text: Optional[str] = None
+    filename: Optional[str] = "screenshot.png"
+
+class QRScanRequest(BaseModel):
+    image_base64: Optional[str] = None
+    payload: Optional[str] = None
+    filename: Optional[str] = "qr_code.png"
 
 # API Endpoints
 @app.get("/api/health")
@@ -108,7 +120,7 @@ def scan_url(req: URLScanRequest):
         return res
 
     # 3. On-Device Machine Learning & Typosquat Inspection
-    result = engine.inspect_url(req.url)
+    result = engine.inspect_url(req.url, source=req.source)
     
     # Log to encrypted vault
     threat_db.log_scan(result, source=req.source)
@@ -116,10 +128,43 @@ def scan_url(req: URLScanRequest):
 
 @app.post("/api/scan/text")
 def scan_text(req: TextScanRequest):
+    import re
+    from core.ip_resolver import resolve_ip_intelligence
     start = time.perf_counter()
     result = nlp_analyzer.analyze_text(req.text)
     latency_ms = round((time.perf_counter() - start) * 1000, 2)
     result["latency_ms"] = latency_ms
+
+    # Extract any embedded URLs in message text (e.g. from WhatsApp / SMS)
+    url_match = re.search(r"https?://[^\s<>\"']+|www\.[^\s<>\"']+", req.text)
+    if url_match:
+        embedded_url = url_match.group(0)
+        url_scan = engine.inspect_url(
+            embedded_url,
+            source=req.source or "WHATSAPP_TEXT",
+            context_text=req.text
+        )
+        is_threat = url_scan["is_threat"] or result.get("threat_level") in ("CRITICAL", "SUSPICIOUS")
+        ip_intel = url_scan.get("ip_intelligence") or resolve_ip_intelligence(
+            embedded_url,
+            is_threat=is_threat,
+            source=req.source or "WHATSAPP_TEXT",
+            context_text=req.text
+        )
+        result["embedded_url"] = embedded_url
+        result["server_ip"] = ip_intel["server_ip"]
+        result["ip_intelligence"] = ip_intel
+        result["cyber_helpline_1930"] = ip_intel["cyber_helpline_1930"]
+
+        if url_scan["is_threat"]:
+            result["threat_level"] = "CRITICAL"
+            result["risk_score"] = max(result.get("risk_score", 0), url_scan["risk_score"])
+            result["summary"] = (
+                f"CRITICAL THREAT: Embedded link flagged as {url_scan['verdict']}. "
+                f"Culprit server IP traced to {ip_intel['server_ip']} ({ip_intel['isp']}). "
+                f"Reportable to Cyber Security Helpline 1930."
+            )
+
     return result
 
 @app.get("/api/vault/stats")
@@ -183,6 +228,108 @@ def run_benchmark():
         "engine": engine.model_type
     }
 
+# WhatsApp Chat Screenshot & Visual Fraud Analyzer Endpoints
+@app.post("/api/analyze/screenshot")
+async def analyze_screenshot_upload(
+    file: Optional[UploadFile] = File(None),
+    text: Optional[str] = Form(None)
+):
+    image_bytes = None
+    filename = "whatsapp_screenshot.png"
+    if file:
+        image_bytes = await file.read()
+        filename = file.filename or filename
+    result = screenshot_analyzer.analyze_image(
+        image_bytes=image_bytes,
+        extracted_text=text,
+        filename=filename
+    )
+    return result
+
+@app.post("/api/analyze/screenshot/json")
+def analyze_screenshot_json(req: ScreenshotScanRequest):
+    import base64
+    image_bytes = None
+    if req.image_base64:
+        raw_b64 = req.image_base64
+        if "base64," in raw_b64:
+            raw_b64 = raw_b64.split("base64,")[1]
+        try:
+            image_bytes = base64.b64decode(raw_b64)
+        except Exception:
+            pass
+    result = screenshot_analyzer.analyze_image(
+        image_bytes=image_bytes,
+        extracted_text=req.text,
+        filename=req.filename or "whatsapp_screenshot.png"
+    )
+    return result
+
+# Scam QR Code & Quishing Detector Endpoints
+@app.post("/api/scan/qr")
+async def scan_qr_upload(
+    file: Optional[UploadFile] = File(None),
+    payload: Optional[str] = Form(None)
+):
+    image_bytes = None
+    filename = "qr_code.png"
+    if file:
+        image_bytes = await file.read()
+        filename = file.filename or filename
+    result = qr_detector.analyze_qr(
+        image_bytes=image_bytes,
+        manual_payload=payload,
+        filename=filename
+    )
+    return result
+
+@app.post("/api/scan/qr/json")
+def scan_qr_json(req: QRScanRequest):
+    result = qr_detector.analyze_qr(
+        image_b64=req.image_base64,
+        manual_payload=req.payload,
+        filename=req.filename or "qr_code.png"
+    )
+    return result
+
+@app.get("/api/qr/presets")
+def qr_presets():
+    presets = [
+        {
+            "id": "quishing_kyc",
+            "title": "Quishing Phishing Scam QR (SBI NetBanking Impersonation)",
+            "type": "QUISHING_URL",
+            "payload": "http://sbi-yono-kyc-verify-portal.in/update",
+            "description": "Scam QR disguised as urgent bank KYC update. Redirects victim to credential harvester.",
+            "image_b64": qr_detector.generate_qr_base64("http://sbi-yono-kyc-verify-portal.in/update")
+        },
+        {
+            "id": "upi_debit_trap",
+            "title": "Fake UPI 'Receive Money' Scam (Reverse Debit Trap)",
+            "type": "UPI_PAYMENT",
+            "payload": "upi://pay?pa=scammer99@oksbi&pn=Lottery%20Prize%20Claim&am=15000&cu=INR&tn=Prize%20Cashback%20Reward",
+            "description": "Scammer claims scanning this sends you ₹15,000 lottery cash. Actually debits ₹15,000 from your account upon PIN entry.",
+            "image_b64": qr_detector.generate_qr_base64("upi://pay?pa=scammer99@oksbi&pn=Lottery%20Prize%20Claim&am=15000&cu=INR&tn=Prize%20Cashback%20Reward")
+        },
+        {
+            "id": "malicious_apk",
+            "title": "Malicious Android APK Download QR",
+            "type": "MALWARE_APK",
+            "payload": "http://speedup-utility-support.top/download/safety_update.apk",
+            "description": "Quishing link dropping an untrusted Android APK designed to intercept OTPs.",
+            "image_b64": qr_detector.generate_qr_base64("http://speedup-utility-support.top/download/safety_update.apk")
+        },
+        {
+            "id": "safe_portal",
+            "title": "Genuine Safe Institutional Portal QR",
+            "type": "SAFE_URL",
+            "payload": "https://cs.stanford.edu/research/ai",
+            "description": "Authentic academic research portal with zero malicious payload.",
+            "image_b64": qr_detector.generate_qr_base64("https://cs.stanford.edu/research/ai")
+        }
+    ]
+    return {"presets": presets}
+
 # CSV Dataset & Batch Scam Scanning Endpoints
 @app.post("/api/scan/csv")
 def scan_csv_endpoint(custom_path: Optional[str] = None):
@@ -193,15 +340,42 @@ def scan_csv_endpoint(custom_path: Optional[str] = None):
 
 @app.post("/api/model/retrain")
 def retrain_model_endpoint(custom_path: Optional[str] = None):
+    import importlib
+    import core.typosquat_detector
+    import core.brand_resolver
+    import core.feature_extractor
+    import core.ml_engine
     from core.trainer import train_and_export_model, DEFAULT_DATASET_CSV
     path = custom_path if (custom_path and os.path.exists(custom_path)) else DEFAULT_DATASET_CSV
     metrics = train_and_export_model(csv_path=path)
-    # Hot-reload ONNX model in engine
+    # Hot-reload modules & ONNX model in engine
+    importlib.reload(core.typosquat_detector)
+    importlib.reload(core.brand_resolver)
+    importlib.reload(core.feature_extractor)
+    importlib.reload(core.ml_engine)
     engine._load_model()
     return {
         "status": "SUCCESS",
         "message": f"Random Forest & ONNX engine successfully retrained from {os.path.basename(path)}!",
         "metrics": metrics
+    }
+
+@app.get("/api/model/reload")
+@app.post("/api/model/reload")
+def reload_engine_endpoint():
+    import importlib
+    import core.typosquat_detector
+    import core.brand_resolver
+    import core.feature_extractor
+    import core.ml_engine
+    importlib.reload(core.typosquat_detector)
+    importlib.reload(core.brand_resolver)
+    importlib.reload(core.feature_extractor)
+    importlib.reload(core.ml_engine)
+    engine._load_model()
+    return {
+        "status": "SUCCESS",
+        "message": "Engine modules and ONNX runtime successfully reloaded!"
     }
 
 @app.get("/api/dataset/preview")

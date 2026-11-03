@@ -37,6 +37,12 @@ class TestVeridexEngine(unittest.TestCase):
         res3 = analyze_typosquatting("https://www.google.com")
         self.assertFalse(res3["is_typosquat"])
 
+        # 4. Symbol homoglyph substitution with '@' (e.g. payp@l.com)
+        res4 = analyze_typosquatting("https://payp@l.com")
+        self.assertTrue(res4["is_typosquat"])
+        self.assertEqual(res4["spoofed_brand"], "paypal")
+        self.assertEqual(res4["severity"], "CRITICAL")
+
     def test_02_universal_feature_extraction(self):
         """Tests that all 26 universal structural features are extracted accurately."""
         url = "http://account-verification-portal-urgent.com/login.php"
@@ -91,6 +97,8 @@ class TestVeridexEngine(unittest.TestCase):
     def test_04_onnx_inference_latency(self):
         """Tests that ONNX inference executes in sub-millisecond on-device latency."""
         safe_url = "https://allrecipes.com/recipe/158140/spaghetti-carbonara/"
+        # Warmup ONNX runtime session & DNS cache
+        engine.inspect_url(safe_url)
         t0 = time.perf_counter()
         res = engine.inspect_url(safe_url)
         latency = (time.perf_counter() - t0) * 1000
@@ -160,6 +168,209 @@ class TestVeridexEngine(unittest.TestCase):
         res_real_paypal = engine.inspect_url("https://www.paypal.com/signin")
         self.assertFalse(res_real_paypal["is_threat"])
         self.assertIsNone(res_real_paypal.get("legitimate_website_suggestion"))
+
+        # 6. PayPal symbol obfuscation replica (https://payp@l.com)
+        res_payp_at = engine.inspect_url("https://payp@l.com")
+        self.assertTrue(res_payp_at["is_threat"])
+        self.assertEqual(res_payp_at["verdict"], "PHISHING / THREAT DETECTED")
+        self.assertGreaterEqual(res_payp_at["risk_score"], 90.0)
+        self.assertIsNotNone(res_payp_at.get("legitimate_website_suggestion"))
+        self.assertEqual(res_payp_at["legitimate_website_suggestion"]["official_url"], "https://www.paypal.com")
+        self.assertEqual(res_payp_at["legitimate_website_suggestion"]["spoofed_brand"], "PayPal")
+
+    def test_08_ip_resolver_and_1930_cybercrime_helpline(self):
+        """Tests culprit server IP address resolution and 1930 cyber security helpline integration."""
+        # 1. WhatsApp scam link (free recharge lure)
+        wa_url = "http://whatsapp-free-500gb-recharge.xyz/claim"
+        res_wa = engine.inspect_url(wa_url)
+        self.assertTrue(res_wa["is_threat"])
+        self.assertIn("server_ip", res_wa)
+        self.assertIsNotNone(res_wa["server_ip"])
+        # Check IP format
+        ip_parts = res_wa["server_ip"].split(".")
+        self.assertEqual(len(ip_parts), 4)
+
+        # Check IP Intelligence details
+        ip_intel = res_wa.get("ip_intelligence", {})
+        self.assertTrue(ip_intel.get("is_whatsapp_lure"))
+        self.assertIn("isp", ip_intel)
+        self.assertIn("server_location", ip_intel)
+
+        # Check 1930 Cyber Helpline reporting details
+        helpline = res_wa.get("cyber_helpline_1930", {})
+        self.assertEqual(helpline.get("helpline"), "1930")
+        self.assertEqual(helpline.get("portal"), "https://cybercrime.gov.in")
+        self.assertIn(res_wa["server_ip"], helpline.get("complaint_text", ""))
+        self.assertIn("1930", helpline.get("complaint_text", ""))
+
+        # 2. Source parameter override
+        res_source = engine.inspect_url("http://claim-rewards-bonus.top/win", source="WHATSAPP_CHAT")
+        self.assertTrue(res_source.get("ip_intelligence", {}).get("is_whatsapp_lure"))
+
+        # 3. Typosquat replica server IP resolution
+        res_typo = engine.inspect_url("http://paypa1-security-verification.com/login")
+        self.assertIsNotNone(res_typo.get("server_ip"))
+        self.assertIn(res_typo["server_ip"], res_typo.get("cyber_helpline_1930", {}).get("complaint_text", ""))
+
+    def test_09_active_app_and_browser_safety_inspector(self):
+        """Tests active application and website URL safety inspection."""
+        from daemon.app_inspector import app_inspector
+
+        # 1. Browser on Safe Website
+        mock_chrome_safe = {
+            "title": "YouTube: Home - Google Chrome",
+            "exe_name": "chrome.exe",
+            "exe_path": r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        }
+        res_chrome_safe = app_inspector.inspect_active_window(mock_chrome_safe)
+        self.assertTrue(res_chrome_safe["is_safe"])
+        self.assertFalse(res_chrome_safe["is_threat"])
+        self.assertEqual(res_chrome_safe["color"], "#22c55e")
+
+        # 2. Browser on WhatsApp Scam URL
+        mock_chrome_scam = {
+            "title": "500GB Free 5G Data - whatsapp-free-500gb-recharge.xyz/claim - Google Chrome",
+            "exe_name": "chrome.exe",
+            "exe_path": r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        }
+        res_chrome_scam = app_inspector.inspect_active_window(mock_chrome_scam)
+        self.assertTrue(res_chrome_scam["is_threat"])
+        self.assertFalse(res_chrome_scam["is_safe"])
+        self.assertEqual(res_chrome_scam["color"], "#ef4444")
+        self.assertIsNotNone(res_chrome_scam.get("server_ip"))
+
+        # 3. WhatsApp Desktop App
+        mock_wa = {
+            "title": "(2) WhatsApp",
+            "exe_name": "WhatsApp.exe",
+            "exe_path": r"C:\Program Files\WindowsApps\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\WhatsApp.exe"
+        }
+        res_wa = app_inspector.inspect_active_window(mock_wa)
+        self.assertTrue(res_wa["is_safe"])
+        self.assertEqual(res_wa["display_name"], "WhatsApp Desktop")
+        self.assertEqual(res_wa["color"], "#22c55e")
+
+        # 4. Microsoft Word
+        mock_word = {
+            "title": "Annual_Report.docx - Word",
+            "exe_name": "WINWORD.EXE",
+            "exe_path": r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"
+        }
+        res_word = app_inspector.inspect_active_window(mock_word)
+        self.assertTrue(res_word["is_safe"])
+        self.assertEqual(res_word["display_name"], "Microsoft Word")
+
+        # 5. Suspicious executable running from Temp
+        mock_suspicious = {
+            "title": "Installer",
+            "exe_name": "setup_fake.exe",
+            "exe_path": r"C:\Users\User\AppData\Local\Temp\setup_fake.exe"
+        }
+        res_suspicious = app_inspector.inspect_active_window(mock_suspicious)
+        self.assertFalse(res_suspicious["is_safe"])
+        self.assertEqual(res_suspicious["target_type"], "UNVERIFIED_APP")
+        self.assertEqual(res_suspicious["color"], "#f59e0b")
+
+    def test_10_whatsapp_screenshot_analyzer(self):
+        """Tests WhatsApp screenshot analysis for fake recharge scams, bank KYC, and culprit IP."""
+        from core.screenshot_analyzer import screenshot_analyzer
+
+        # 1. WhatsApp viral 500GB scam message with culprit IP resolution
+        fake_chat = (
+            "Forwarded many times\n"
+            "Free 3-Month Mobile Recharge Offer!\n"
+            "Government of India is giving 500GB free 5G data to all WhatsApp users.\n"
+            "Click here immediately before offer expires:\n"
+            "http://whatsapp-free-500gb-recharge.xyz/claim?ref=wa"
+        )
+        res_fake = screenshot_analyzer.analyze_image(extracted_text=fake_chat)
+        self.assertTrue(res_fake["is_fake"])
+        self.assertEqual(res_fake["threat_level"], "CRITICAL")
+        self.assertIn("1930", res_fake["cyber_dossier_1930"])
+        self.assertIsNotNone(res_fake["culprit_server_ip"])
+        self.assertTrue(res_fake["has_forwarded_tag"])
+        self.assertGreaterEqual(len(res_fake["matched_indicators"]), 2)
+
+        # 2. Genuine / Safe chat
+        safe_chat = (
+            "Hi Shreya! Are we meeting for the project discussion at 4 PM today?\n"
+            "Here is the location link: https://maps.google.com/place/coffee-shop"
+        )
+        res_safe = screenshot_analyzer.analyze_image(extracted_text=safe_chat)
+        self.assertFalse(res_safe["is_fake"])
+        self.assertEqual(res_safe["threat_level"], "SAFE")
+
+    def test_11_scam_qr_code_detector(self):
+        """Tests Scam QR Code Detector for Quishing URLs, Fake UPI Reverse-Debit Traps, and Malicious APKs."""
+        from core.qr_detector import qr_detector
+
+        # 1. Reverse UPI payment fraud trap
+        upi_scam_payload = "upi://pay?pa=scammer99@oksbi&pn=Lottery%20Prize%20Claim&am=15000&cu=INR&tn=Prize%20Cashback%20Reward"
+        res_upi = qr_detector.inspect_payload(upi_scam_payload)
+        self.assertTrue(res_upi["is_threat"])
+        self.assertEqual(res_upi["threat_level"], "CRITICAL")
+        self.assertIn("REVERSE UPI", res_upi["verdict"])
+        self.assertGreaterEqual(res_upi["risk_score"], 90.0)
+        self.assertIsNotNone(res_upi["report_card"])
+        self.assertIn("1930", res_upi["cyber_dossier_1930"])
+
+        # 2. Quishing URL (phishing bank replica)
+        quishing_payload = "http://sbi-yono-kyc-verify-portal.in/update"
+        res_quish = qr_detector.inspect_payload(quishing_payload)
+        self.assertTrue(res_quish["is_threat"])
+        self.assertIn("QUISHING", res_quish["verdict"])
+        self.assertIsNotNone(res_quish["culprit_server_ip"])
+        self.assertIsNotNone(res_quish["report_card"])
+
+        # 3. Malicious APK drop QR
+        apk_payload = "http://speedup-utility-support.top/download/safety_update.apk"
+        res_apk = qr_detector.inspect_payload(apk_payload)
+        self.assertTrue(res_apk["is_threat"])
+        self.assertEqual(res_apk["threat_level"], "CRITICAL")
+        self.assertIn("APK", res_apk["verdict"])
+
+        # 4. Safe Institutional URL QR
+        safe_payload = "https://cs.stanford.edu/research/ai"
+        res_safe = qr_detector.inspect_payload(safe_payload)
+        self.assertFalse(res_safe["is_threat"])
+        self.assertEqual(res_safe["threat_level"], "SAFE")
+        self.assertIsNotNone(res_safe["report_card"])
+
+        # 5. Visual QR Image Encoding & Decoding Pipeline
+        qr_b64 = qr_detector.generate_qr_base64("https://danluu.com/productivity-advice/")
+        self.assertTrue(qr_b64.startswith("data:image/png;base64,"))
+        decode_res = qr_detector.decode_qr_image(image_b64=qr_b64)
+        self.assertTrue(decode_res["success"])
+        self.assertEqual(decode_res["payload"], "https://danluu.com/productivity-advice/")
+
+    def test_12_report_card_generation(self):
+        """Tests structured Cyber Incident Report Card generation across URL, Message, and QR scanners."""
+        # 1. URL Inspector report card
+        url_res = engine.inspect_url("http://paypa1-security-verification.com/login")
+        self.assertIn("report_card", url_res)
+        rc_url = url_res["report_card"]
+        self.assertTrue(rc_url["incident_id"].startswith("VDX-URL-"))
+        self.assertTrue(rc_url["is_threat"])
+        self.assertIn("1930", rc_url["helpline_dialpad"])
+        self.assertIn("cybercrime.gov.in", rc_url["complaint_url"])
+        self.assertIn("PAYPAL", rc_url["full_dossier_text"].upper())
+
+        # 2. Message Screenshot report card
+        from core.screenshot_analyzer import screenshot_analyzer
+        chat_text = "Dear Consumer, your electricity power will be disconnected tonight at 9:30 PM. Pay now: http://power-bill-payment-quick.top/bill"
+        msg_res = screenshot_analyzer.analyze_image(extracted_text=chat_text)
+        self.assertIn("report_card", msg_res)
+        rc_msg = msg_res["report_card"]
+        self.assertTrue(rc_msg["incident_id"].startswith("VDX-INCIDENT-"))
+        self.assertTrue(rc_msg["is_fake"])
+
+        # 3. QR Detector report card
+        from core.qr_detector import qr_detector
+        qr_res = qr_detector.inspect_payload("http://whatsapp-free-500gb-recharge.xyz/claim")
+        self.assertIn("report_card", qr_res)
+        rc_qr = qr_res["report_card"]
+        self.assertTrue(rc_qr["incident_id"].startswith("VDX-QR-"))
+        self.assertTrue(rc_qr["is_threat"])
 
 if __name__ == "__main__":
     unittest.main()

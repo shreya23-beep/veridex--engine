@@ -48,12 +48,14 @@
   </style>
 
   <!-- External Stylesheet with Cache-Buster -->
-  <link rel="stylesheet" href="/static/style.css?v=20261016_crema_v4_nosymbols">
+  <link rel="stylesheet" href="/static/style.css?v=20261103_qr_reportcard_v2">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="/static/assets/logo.svg">
+  <!-- Client-Side Zero-Cloud OCR for Screenshot Analysis -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div class="app-layout">
@@ -116,6 +118,12 @@
           <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('url-scanner')">
             <span>URL Inspector</span>
           </button>
+          <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('screenshot-analyzer')" id="tabBtnScreenshot">
+            <span>Message Screenshot Analyzer</span>
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('qr-scanner')" id="tabBtnQR">
+            <span>Scam QR Code Detector</span>
+          </button>
           <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('nlp-scanner')">
             <span>NLP Manipulation</span>
           </button>
@@ -163,6 +171,7 @@
               <div class="preset-chips">
                 <button class="sample-tag danger" onclick="loadSample('https://scam.com')">Scam.com Domain</button>
                 <button class="sample-tag danger" onclick="loadSample('http://paypa1-security-verification.com/login')">PayPal Impersonation</button>
+                <button class="sample-tag danger" onclick="loadSample('http://whatsapp-free-500gb-recharge.xyz/claim')">WhatsApp Scam Link</button>
                 <button class="sample-tag danger" onclick="loadSample('http://account-verification-portal-urgent.com/login.php')">Generic Phishing Portal</button>
                 <button class="sample-tag danger" onclick="loadSample('http://system-speedup-utility.top/download/setup.exe')">Malware Binary (.exe)</button>
                 <button class="sample-tag danger" onclick="loadSample('http://claim-free-rewards-survey2026.xyz/win?click=99')">Financial Lure Scam</button>
@@ -206,6 +215,56 @@
             </div>
           </div>
 
+          <!-- Cybercrime Forensics & 1930 Helpline Complaint Card (WhatsApp & Culprit IP Tracking) -->
+          <div id="cyberCrimeCard" class="card cybercrime-card hidden">
+            <div class="cybercrime-header-row">
+              <div class="cybercrime-title-wrap">
+                <span class="cyber-badge-alert">Culprit Server Traced</span>
+                <span id="whatsappOriginBadge" class="wa-origin-badge hidden">WhatsApp Threat Vector</span>
+                <h4>Culprit IP &amp; National Cybercrime Helpline 1930</h4>
+              </div>
+              <a href="tel:1930" class="btn-cyber-call" title="Call National Cyber Crime Reporting Helpline">
+                <span class="call-primary">Dial 1930</span>
+                <span class="call-sub">Cyber Helpline</span>
+              </a>
+            </div>
+
+            <p class="cybercrime-desc">
+              Culprit server hosting forensics have been resolved for this malicious site. Under Ministry of Home Affairs (I4C) guidelines, you can report this server IP immediately via toll-free helpline <strong>1930</strong> or file an incident complaint on <strong>cybercrime.gov.in</strong>.
+            </p>
+
+            <div class="ip-forensics-grid">
+              <div class="forensic-item">
+                <span class="forensic-label">Culprit Server IP</span>
+                <span id="detectedServerIp" class="ip-address-text">--.--.--.--</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Hosting ISP / Network</span>
+                <span id="detectedIspName" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Server Location</span>
+                <span id="detectedLocation" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Incident Category</span>
+                <span id="detectedCrimeCategory" class="forensic-val">Online Scam / Phishing</span>
+              </div>
+            </div>
+
+            <div class="cybercrime-actions-row">
+              <button type="button" class="btn-cyber-outline btn-download-report" onclick="downloadReportCard('url')">
+                <span>📥 Download Official Report Card</span>
+              </button>
+              <button type="button" class="btn-cyber-outline" onclick="copyCyberComplaint()">
+                <span id="copyComplaintBtnText">Copy Official 1930 Complaint Dossier</span>
+              </button>
+              <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="btn-cyber-outline link-portal">
+                <span>Open cybercrime.gov.in Portal</span>
+              </a>
+            </div>
+          </div>
+
           <div class="result-grid">
             <!-- Left: Risk Gauge & Score -->
             <div class="card result-card score-card">
@@ -240,6 +299,394 @@
         </div>
       </section>
 
+      <!-- TAB: MESSAGE SCREENSHOT ANALYZER -->
+      <section id="tab-screenshot-analyzer" class="tab-content" role="tabpanel">
+        <div class="scanner-hero">
+          <div class="section-title-wrap">
+            <h2>Message Screenshot &amp; Fraud Analyzer</h2>
+            <p>Upload or paste any screenshot of SMS, WhatsApp, Telegram, or social media messages to detect viral fake recharge lures, bank KYC deactivation threats, electricity power-cut urgency, culprit server hosting IPs, and official 1930 / cybercrime.gov.in filing.</p>
+          </div>
+
+          <!-- Upload Dropzone Card -->
+          <div class="card screenshot-upload-card">
+            <div class="screenshot-dropzone" id="screenshotDropZone" onclick="triggerScreenshotFileInput()">
+              <input type="file" id="screenshotFileInput" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" onchange="handleScreenshotFileSelect(event)" />
+              <div class="dropzone-inner">
+                <div class="dropzone-icon-wrap">
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#8C6842" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </div>
+                <h3 class="dropzone-title">Drop Message Screenshot Here</h3>
+                <p class="dropzone-subtitle">Click to select an image from your device (SMS, WhatsApp, Telegram, etc.) &bull; or press <kbd>Ctrl + V</kbd> to paste from clipboard</p>
+                <div class="dropzone-formats">Supports PNG, JPG, JPEG, WEBP &bull; 100% Private On-Device Processing</div>
+              </div>
+            </div>
+
+            <!-- Built-in Test Presets -->
+            <div class="preset-group screenshot-presets-row">
+              <span class="preset-label">Test Real-World Message Scenarios:</span>
+              <div class="preset-chips">
+                <button type="button" class="sample-tag danger" onclick="loadScreenshotPreset('free_recharge')">Viral 500GB Free Recharge Scam</button>
+                <button type="button" class="sample-tag danger" onclick="loadScreenshotPreset('sbi_kyc')">Bank KYC Block Threat (SMS/NetBanking)</button>
+                <button type="button" class="sample-tag danger" onclick="loadScreenshotPreset('power_cut')">Electricity Disconnect Tonight (Utility SMS)</button>
+                <button type="button" class="sample-tag danger" onclick="loadScreenshotPreset('part_time_job')">Part-Time Telegram Task Scam</button>
+                <button type="button" class="sample-tag safe" onclick="loadScreenshotPreset('safe_chat')">Genuine Safe Message</button>
+              </div>
+            </div>
+
+            <!-- Interactive Workspace (Image Preview + Extracted Text) -->
+            <div class="screenshot-workspace" id="screenshotWorkspace" style="display: none;">
+              <div class="screenshot-preview-col">
+                <div class="workspace-label-bar">
+                  <span>Message Screenshot Preview</span>
+                  <button type="button" class="btn-text-action" onclick="clearScreenshotWorkspace()">Remove Image</button>
+                </div>
+                <div class="screenshot-img-container">
+                  <img id="screenshotPreviewImg" src="" alt="Message Screenshot Preview" />
+                </div>
+              </div>
+
+              <div class="screenshot-text-col">
+                <div class="workspace-label-bar">
+                  <span>Extracted Message Transcript (OCR / Text)</span>
+                  <span class="badge-chip" id="ocrStatusBadge">On-Device Ready</span>
+                </div>
+                <textarea id="screenshotExtractedText" rows="6" placeholder="Extracted chat or SMS message text will appear here. You can also edit or paste text directly..."></textarea>
+                <div class="workspace-action-bar">
+                  <button type="button" class="btn-primary" id="btnAnalyzeScreenshot" onclick="analyzeScreenshot()">
+                    <span>Analyze Message Screenshot</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCREENSHOT ANALYSIS RESULTS CONTAINER -->
+        <div id="screenshotResultContainer" class="result-container hidden">
+          <!-- Big Verdict Header -->
+          <div class="result-header">
+            <div class="verdict-banner" id="screenshotVerdictBanner">
+              <div class="verdict-text-block">
+                <h3 id="screenshotVerdictTitle">EVALUATION READY</h3>
+                <p id="screenshotVerdictSub">Autonomous visual and linguistic analysis complete.</p>
+              </div>
+            </div>
+            <div class="speed-meta">
+              <div class="badge-chip badge-category" id="screenshotThreatLevelBadge">CRITICAL</div>
+              <div class="badge-chip" id="screenshotLatency">0.32 ms</div>
+              <div class="badge-chip" id="screenshotEngine">ONNX + OCR</div>
+            </div>
+          </div>
+
+          <!-- Score & Risk Breakdown Strip -->
+          <div class="results-grid">
+            <div class="card result-card score-card">
+              <h4>Scam Probability</h4>
+              <div class="score-display">
+                <div class="score-circle" id="screenshotScoreCircle">
+                  <span id="screenshotScoreText">0%</span>
+                  <small>SCAM INDEX</small>
+                </div>
+              </div>
+              <div class="score-details">
+                <div class="detail-row">
+                  <span>Forwarded Viral Tag:</span>
+                  <strong id="screenshotForwardedTag">None</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Embedded Scam Link:</span>
+                  <strong id="screenshotEmbeddedLinkStatus">None</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Culprit Server IP:</span>
+                  <strong id="screenshotCulpritHost">Resolving...</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Indicators Decomposition List -->
+            <div class="card result-card xai-card">
+              <h4>Fraud Markers &amp; Manipulation Indicators</h4>
+              <p class="xai-sub">Decomposition of detected scam indicators and phishing patterns:</p>
+              <ul class="xai-list" id="screenshotIndicatorsList">
+                <!-- Injected via JS -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- OFFICIAL CYBER INCIDENT REPORT CARD -->
+          <div id="screenshotCyberCard" class="card cybercrime-card hidden">
+            <div class="cybercrime-header-row">
+              <div class="cybercrime-title-wrap">
+                <span class="cyber-badge-alert">Culprit Server Traced</span>
+                <span class="wa-origin-badge">Incident Report Card</span>
+                <h4>Ministry of Home Affairs (I4C) Compliant Cyber Incident Report Card</h4>
+              </div>
+              <a href="tel:1930" class="btn-cyber-call" title="Call National Cyber Crime Reporting Helpline">
+                <span class="call-primary">Dial 1930</span>
+                <span class="call-sub">Cyber Helpline</span>
+              </a>
+            </div>
+
+            <p class="cybercrime-desc" id="screenshotCyberDesc">
+              Culprit server hosting forensics have been resolved. Register a complaint on <strong>cybercrime.gov.in</strong> or dial <strong>1930</strong> from your phone dialpad immediately.
+            </p>
+
+            <div class="ip-forensics-grid">
+              <div class="forensic-item">
+                <span class="forensic-label">Culprit Server IP</span>
+                <span id="screenshotServerIp" class="ip-address-text">--.--.--.--</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Hosting ISP / Network</span>
+                <span id="screenshotServerIsp" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Server Location</span>
+                <span id="screenshotServerLocation" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Report Card Reference</span>
+                <span id="screenshotLureCategory" class="forensic-val">VDX-INCIDENT-READY</span>
+              </div>
+            </div>
+
+            <div class="cybercrime-actions-row">
+              <button type="button" class="btn-cyber-outline btn-download-report" onclick="downloadReportCard('screenshot')">
+                <span>📥 Download Official Report Card</span>
+              </button>
+              <button type="button" class="btn-cyber-outline" onclick="copyScreenshotCyberComplaint()">
+                <span id="screenshotCopyComplaintBtnText">📋 Copy Full Incident Report Card Dossier</span>
+              </button>
+              <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="btn-cyber-outline link-portal">
+                <span>Register on cybercrime.gov.in Portal</span>
+              </a>
+              <a href="tel:1930" class="btn-cyber-outline" style="color: #C53929; border-color: #C53929;">
+                <span>Dial 1930 Dialpad</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Authentic Official Website Recommendation (If brand spoofed) -->
+          <div id="screenshotReplicaBox" class="card replica-card hidden">
+            <div class="replica-card-inner">
+              <div class="replica-info">
+                <div class="replica-header-row">
+                  <h4>Verified Authentic Original Portal</h4>
+                  <span id="screenshotReplicaBrandBadge" class="brand-badge-pill">Brand</span>
+                </div>
+                <p id="screenshotReplicaWarningText">The WhatsApp message contains an unauthorized replica link attempting to impersonate a legitimate organization:</p>
+              </div>
+              <div class="replica-actions">
+                <a id="screenshotOfficialRedirectLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-official-redirect">
+                  <span>Go to Official Website</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: SCAM QR CODE DETECTOR -->
+      <section id="tab-qr-scanner" class="tab-content" role="tabpanel">
+        <div class="scanner-hero">
+          <div class="section-title-wrap">
+            <h2>On-Device Scam QR Code &amp; Quishing Detector</h2>
+            <p>Upload, paste, or scan any QR code image to detect deceptive quishing URLs, fake UPI "receive money" payment traps, malicious Android APK drops, culprit server hosting IPs, and official 1930 / cybercrime.gov.in report card generation.</p>
+          </div>
+
+          <!-- Upload Dropzone Card -->
+          <div class="card qr-upload-card">
+            <div class="qr-dropzone" id="qrDropZone" onclick="triggerQrFileInput()">
+              <input type="file" id="qrFileInput" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" onchange="handleQrFileSelect(event)" />
+              <div class="dropzone-inner">
+                <div class="dropzone-icon-wrap">
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#8C6842" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                    <line x1="17" y1="7" x2="17.01" y2="7"></line>
+                    <line x1="7" y1="17" x2="7.01" y2="17"></line>
+                    <line x1="17" y1="17" x2="17.01" y2="17"></line>
+                  </svg>
+                </div>
+                <h3 class="dropzone-title">Drop QR Code Image Here</h3>
+                <p class="dropzone-subtitle">Click to select an image from your device &bull; or press <kbd>Ctrl + V</kbd> to paste a screenshot from clipboard</p>
+                <div class="dropzone-formats">Supports PNG, JPG, JPEG, WEBP &bull; 100% Private On-Device Processing</div>
+              </div>
+            </div>
+
+            <!-- Built-in Test Presets -->
+            <div class="preset-group qr-presets-row">
+              <span class="preset-label">Test Real-World QR Threat Scenarios:</span>
+              <div class="preset-chips">
+                <button type="button" class="sample-tag danger" onclick="loadQrPreset('quishing_kyc')">Quishing: Bank KYC Phishing QR</button>
+                <button type="button" class="sample-tag danger" onclick="loadQrPreset('upi_debit_trap')">Fake UPI "Receive Money" Scam (Reverse Debit Trap)</button>
+                <button type="button" class="sample-tag danger" onclick="loadQrPreset('malicious_apk')">Malware APK Download QR</button>
+                <button type="button" class="sample-tag safe" onclick="loadQrPreset('safe_portal')">Genuine Safe Institutional Portal QR</button>
+              </div>
+            </div>
+
+            <!-- Interactive Workspace (QR Image Preview + Decoded Payload Inspector) -->
+            <div class="qr-workspace" id="qrWorkspace" style="display: none;">
+              <div class="qr-preview-col">
+                <div class="workspace-label-bar">
+                  <span>Scanned QR Code Matrix</span>
+                  <button type="button" class="btn-text-action" onclick="clearQrWorkspace()">Remove Image</button>
+                </div>
+                <div class="qr-img-container">
+                  <img id="qrPreviewImg" src="" alt="QR Code Preview" />
+                </div>
+              </div>
+
+              <div class="qr-text-col">
+                <div class="workspace-label-bar">
+                  <span>Decoded Payload Content &amp; Type</span>
+                  <span class="badge-chip" id="qrPayloadTypeBadge">Detecting...</span>
+                </div>
+                <textarea id="qrDecodedPayloadText" rows="6" placeholder="Decoded QR payload string will appear here automatically. You can also paste or edit a URL/UPI string directly..."></textarea>
+                <div class="workspace-action-bar">
+                  <button type="button" class="btn-primary" id="btnAnalyzeQr" onclick="analyzeQr()">
+                    <span>Inspect QR Payload On-Device</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR SCAN RESULTS CONTAINER -->
+        <div id="qrResultContainer" class="result-container hidden">
+          <!-- Big Verdict Header -->
+          <div class="result-header">
+            <div class="verdict-banner" id="qrVerdictBanner">
+              <div class="verdict-text-block">
+                <h3 id="qrVerdictTitle">EVALUATION READY</h3>
+                <p id="qrVerdictSub">On-device quishing and transaction analysis complete.</p>
+              </div>
+            </div>
+            <div class="speed-meta">
+              <div class="badge-chip badge-category" id="qrThreatLevelBadge">CRITICAL</div>
+              <div class="badge-chip" id="qrLatency">0.28 ms</div>
+              <div class="badge-chip" id="qrEngine">OpenCV + ONNX</div>
+            </div>
+          </div>
+
+          <!-- Score & Risk Breakdown Strip -->
+          <div class="results-grid">
+            <div class="card result-card score-card">
+              <h4>Threat Probability</h4>
+              <div class="score-display">
+                <div class="score-circle" id="qrScoreCircle">
+                  <span id="qrScoreText">0%</span>
+                  <small>RISK INDEX</small>
+                </div>
+              </div>
+              <div class="score-details">
+                <div class="detail-row">
+                  <span>QR Type:</span>
+                  <strong id="qrTypeDetail">URL_DESTINATION</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Decoded Target:</span>
+                  <strong id="qrTargetDetail">Resolving...</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Culprit Server / VPA:</span>
+                  <strong id="qrCulpritHost">Resolving...</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Indicators Decomposition List -->
+            <div class="card result-card xai-card">
+              <h4>Fraud Markers &amp; Violation Decomposition</h4>
+              <p class="xai-sub">Decomposition of detected quishing cues, reverse-debit vectors, or payload indicators:</p>
+              <ul class="xai-list" id="qrIndicatorsList">
+                <!-- Injected via JS -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- OFFICIAL CYBER INCIDENT REPORT CARD -->
+          <div id="qrCyberCard" class="card cybercrime-card hidden">
+            <div class="cybercrime-header-row">
+              <div class="cybercrime-title-wrap">
+                <span class="cyber-badge-alert">Culprit Traced</span>
+                <span class="wa-origin-badge">Official Report Card</span>
+                <h4>Ministry of Home Affairs (I4C) Compliant Cyber Incident Report Card</h4>
+              </div>
+              <a href="tel:1930" class="btn-cyber-call" title="Call National Cyber Crime Reporting Helpline">
+                <span class="call-primary">Dial 1930</span>
+                <span class="call-sub">Cyber Helpline</span>
+              </a>
+            </div>
+
+            <p class="cybercrime-desc" id="qrCyberDesc">
+              Culprit server hosting / payment recipient forensics resolved. Register a complaint on <strong>cybercrime.gov.in</strong> or dial <strong>1930</strong> from your phone dialpad immediately.
+            </p>
+
+            <div class="ip-forensics-grid">
+              <div class="forensic-item">
+                <span class="forensic-label">Culprit Server IP / VPA</span>
+                <span id="qrServerIp" class="ip-address-text">--.--.--.--</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Hosting ISP / Gateway</span>
+                <span id="qrServerIsp" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Server Location</span>
+                <span id="qrServerLocation" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Report Card Reference</span>
+                <span id="qrIncidentId" class="forensic-val">VDX-QR-READY</span>
+              </div>
+            </div>
+
+            <div class="cybercrime-actions-row">
+              <button type="button" class="btn-cyber-outline btn-download-report" onclick="downloadReportCard('qr')">
+                <span>📥 Download Official Report Card</span>
+              </button>
+              <button type="button" class="btn-cyber-outline" onclick="copyQrCyberComplaint()">
+                <span id="qrCopyComplaintBtnText">📋 Copy Full Incident Report Card Dossier</span>
+              </button>
+              <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="btn-cyber-outline link-portal">
+                <span>Register on cybercrime.gov.in Portal</span>
+              </a>
+              <a href="tel:1930" class="btn-cyber-outline" style="color: #C53929; border-color: #C53929;">
+                <span>Dial 1930 Dialpad</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Authentic Official Website Recommendation (If brand spoofed) -->
+          <div id="qrReplicaBox" class="card replica-card hidden">
+            <div class="replica-card-inner">
+              <div class="replica-info">
+                <div class="replica-header-row">
+                  <h4>Verified Authentic Original Portal</h4>
+                  <span id="qrReplicaBrandBadge" class="brand-badge-pill">Brand</span>
+                </div>
+                <p id="qrReplicaWarningText">The QR code leads to an unauthorized replica domain. Access the verified legitimate website directly:</p>
+              </div>
+              <div class="replica-actions">
+                <a id="qrOfficialRedirectLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-official-redirect">
+                  <span>Go to Official Website</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 2: NLP MANIPULATION CUES -->
       <section id="tab-nlp-scanner" class="tab-content" role="tabpanel">
         <div class="scanner-hero">
@@ -254,6 +701,7 @@
               <div class="preset-group nlp-presets">
                 <span class="preset-label">Test Templates:</span>
                 <div class="preset-chips">
+                  <button class="sample-tag danger" onclick="loadNlpPreset('whatsapp')">WhatsApp Fake Prize</button>
                   <button class="sample-tag danger" onclick="loadNlpPreset('urgency')">Urgency Coercion</button>
                   <button class="sample-tag danger" onclick="loadNlpPreset('greed')">Crypto Lottery</button>
                   <button class="sample-tag danger" onclick="loadNlpPreset('techsupport')">Fake Tech Support</button>
@@ -277,6 +725,53 @@
             </div>
             <div class="cues-grid" id="cuesGrid">
               <!-- Injected via JS -->
+            </div>
+          </div>
+
+          <!-- NLP Embedded URL / Culprit IP Forensics Card -->
+          <div id="nlpCyberCrimeCard" class="card cybercrime-card nlp-cyber-card hidden">
+            <div class="cybercrime-header-row">
+              <div class="cybercrime-title-wrap">
+                <span class="cyber-badge-alert">Malicious Link Traced in Message</span>
+                <span class="wa-origin-badge">WhatsApp Scam Vector</span>
+                <h4>Culprit IP &amp; National Cybercrime Helpline 1930</h4>
+              </div>
+              <a href="tel:1930" class="btn-cyber-call" title="Call National Cyber Crime Reporting Helpline">
+                <span class="call-primary">Dial 1930</span>
+                <span class="call-sub">Cyber Helpline</span>
+              </a>
+            </div>
+
+            <p class="cybercrime-desc">
+              Culprit server hosting forensics have been resolved for the fake link embedded inside this message. Under Ministry of Home Affairs (I4C) guidelines, you can report this server IP immediately via toll-free helpline <strong>1930</strong> or file an incident complaint on <strong>cybercrime.gov.in</strong>.
+            </p>
+
+            <div class="ip-forensics-grid">
+              <div class="forensic-item">
+                <span class="forensic-label">Culprit Server IP</span>
+                <span id="nlpDetectedServerIp" class="ip-address-text">--.--.--.--</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Hosting ISP / Network</span>
+                <span id="nlpDetectedIsp" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Server Location</span>
+                <span id="nlpDetectedLocation" class="forensic-val">Resolving...</span>
+              </div>
+              <div class="forensic-item">
+                <span class="forensic-label">Incident Category</span>
+                <span id="nlpDetectedCrimeCategory" class="forensic-val">WhatsApp Forward Scam</span>
+              </div>
+            </div>
+
+            <div class="cybercrime-actions-row">
+              <button type="button" class="btn-cyber-outline" onclick="copyNlpCyberComplaint()">
+                <span id="nlpCopyComplaintBtnText">Copy Official 1930 Complaint Dossier</span>
+              </button>
+              <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="btn-cyber-outline link-portal">
+                <span>Open cybercrime.gov.in Portal</span>
+              </a>
             </div>
           </div>
         </div>
@@ -474,7 +969,7 @@
 
     <!-- FOOTER -->
     <footer class="app-footer">
-      <p>VeriDex AI | Autonomous On-Device Scam Protection Engine | BGSIT Hackathon 2026 | Team: Shreya S, Shirali S, Shreya S, Sinchana M</p>
+      <p>VeriDex AI | Autonomous On-Device Scam Protection Engine | Team: Shreya S, Shirali S, Shreya S, Sinchana M</p>
     </footer>
   </div>
 
@@ -499,6 +994,10 @@
             <span id="modalScannedUrl" class="dest-comparison-val replica-val">https://orakle.com</span>
           </div>
           <div class="dest-comparison-row">
+            <span class="dest-comparison-label">Culprit Server IP:</span>
+            <span id="modalServerIp" class="dest-comparison-val ip-val">Resolving...</span>
+          </div>
+          <div class="dest-comparison-row">
             <span class="dest-comparison-label">Official Authentic Portal:</span>
             <span id="modalOfficialDomain" class="dest-comparison-val official-val">oracle.com (Oracle Corporation)</span>
           </div>
@@ -506,6 +1005,9 @@
       </div>
 
       <div class="replica-modal-actions">
+        <a href="tel:1930" class="replica-modal-btn call-1930" title="Dial 1930 Cybercrime Helpline">
+          <span>Call 1930 Helpline</span>
+        </a>
         <button type="button" class="replica-modal-btn dismiss" onclick="closeReplicaModal()">Stay on This Page</button>
         <a id="modalRedirectLink" href="#" target="_blank" rel="noopener noreferrer" class="replica-modal-btn redirect" onclick="closeReplicaModal()">
           <span>Redirect to Official Website</span>
@@ -514,6 +1016,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20261016_crema_v5_popup"></script>
+  <script src="/static/app.js?v=20261103_qr_reportcard_v2"></script>
 </body>
 </html>
