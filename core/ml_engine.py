@@ -5,9 +5,11 @@ classifying ANY arbitrary URL (blogs, educational sites, forums, news, e-commerc
 file downloads, generic scams, or brand impersonations) with Explainable AI.
 """
 
+from __future__ import annotations
 import os
 import time
 import json
+from typing import Optional, Dict, Any, List, Tuple
 import numpy as np
 import onnxruntime as ort
 import joblib

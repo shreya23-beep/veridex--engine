@@ -4,9 +4,10 @@ Provides zero-cloud local endpoints for on-device inference,
 real-time clipboard monitoring, and the web cyber-defense dashboard.
 """
 
+from __future__ import annotations
 import os
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
